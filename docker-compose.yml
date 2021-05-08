@@ -1,0 +1,34 @@
+version: '3'
+services:
+  blockchain:
+    container_name: blockchain
+    image: blockchain:latest
+    entrypoint: python3 /main.py
+    environment:
+      - PYTHONUNBUFFERED=1
+      - WRITER_IP=0.0.0.0
+      - WRITER_PORT=12345
+      - MINERS_HANDLER_LISTEN_CONNECTIONS=2
+    networks:
+      - blockchain_system
+
+  miners_handler:
+    container_name: miners_handler
+    image: miners_handler:latest
+    entrypoint: python3 /main.py
+    environment:
+      - PYTHONUNBUFFERED=1
+      - WRITER_IP=blockchain
+      - WRITER_PORT=12345
+      - MINERS_HANDLER_LISTEN_CONNECTIONS=2
+    networks:
+      - blockchain_system
+    depends_on: 
+      - blockchain
+  
+networks:
+  blockchain_system:
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.25.125.0/24
