@@ -6,10 +6,6 @@ default: build
 
 all:
 
-miner:
-	docker build -f ./miner/Dockerfile -t "miner:latest" .
-.PHONY: miner
-
 miners_handler:
 	docker build -f ./miners_handler/Dockerfile -t "miners_handler:latest" .
 .PHONY: miners_handler
