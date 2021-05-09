@@ -3,51 +3,40 @@ import threading
 import time
 import json
 import socket
+import os
 
 from utils_sock import *
 from block import Block
+from constants import *
 
 
 class Writer(threading.Thread):
-    def __init__(self, host, port):
+    def __init__(self, queue_blocks):
       threading.Thread.__init__(self)
-      # Create a TCP/IP socket
-      self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-      self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+      self.queue_blocks = queue_blocks
 
-      # Bind the socket to the port
-      self.sock.bind((host, port))
+    def saveBlock(self, block_data):
+      timestamp = datetime.datetime.strptime(block_data['info']['header']['timestamp'], TIMESTAMP_FORMAT).replace(minute= 0, second=0, microsecond=0)
+      timestamp_without_seconds = timestamp.strftime(TIMESTAMP_FORMAT)
 
-      # Listen for incoming connections
-      self.sock.listen(1)
-      self.last_hash = None
+      filename = "{}.json".format(timestamp.strftime(TIMESTAMP_FORMAT))
+      entry = { "timestamp": block_data['info']['header']['timestamp'], "hash": block_data['hash']}
+      if not os.path.exists(filename):
+        with open(filename, 'w') as f:
+          json.dump({"entries": [entry]}, f)
+      else:
+        with open(filename, "r+") as index:
+          data = json.load(index)
+          data["entries"].append(entry)
+          index.seek(0)
+          json.dump(data, index)
+          
+        
+
+      with open('{}.json'.format(block_data['hash']), 'w') as f:
+          json.dump(block_data['info'], f)
 
     def run(self):
       while True:
-        # leer del socket y escribir en el archivo
-        connection, client_address = self.sock.accept()
-
-        size_block = bytes_8_to_number(recv(connection, NUMBER_SIZE))
-
-        print("recibi el tamano del bloque {}".format(size_block))
-
-        block_data = json.loads(recv(connection, size_block).decode('utf-8'))
-        print("[WRITER] recibi {}".format(block_data))
-
-        #block = Block.deserialize(block_data['info'])
-
-        print("lasthash {} block prev hash {}".format(self.last_hash, block_data['info']['header']['prev_hash']))
-
-        if self.last_hash != block_data['info']['header']['prev_hash']:
-          print("FALLO {}".format(block_data['hash']))
-          result = False
-        else:
-          self.last_hash = block_data['hash']
-          print("EXITO! {}".format(block_data['hash']))
-          result = True
-          with open('{}.json'.format(block_data['hash']), 'w') as f:
-            json.dump(block_data['info'], f)
-        #intentar guardar en los archivos
-        send(connection, ACK_SCHEME.pack(result)) #mando si fue bien o no
-        close(connection)
-      close(self.sock)
+        block_data = self.queue_blocks.get()
+        self.saveBlock(block_data)

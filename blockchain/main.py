@@ -2,7 +2,7 @@
 #import socket
 import sys
 import os
-from writer import Writer
+from blockchain import Blockchain
 
 # TODO: Check errors
 HOST = os.environ["WRITER_IP"]
@@ -14,10 +14,9 @@ PORT = int(os.environ["WRITER_PORT"])
 
 
 def main():
-    writer = Writer(HOST, PORT)
+    blockchain = Blockchain(HOST, PORT)
 
-    writer.start()
-    writer.join()
+    blockchain.run()
 
 
 if __name__ == "__main__":

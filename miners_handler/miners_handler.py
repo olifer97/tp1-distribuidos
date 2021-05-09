@@ -5,6 +5,7 @@ from block import Block
 import json
 import asyncio
 
+DIFFICULTY_MINED_BLOCKS = 256
 
 class MinersHandler:
     def __init__(self, n_miners, writer_address):
@@ -15,12 +16,26 @@ class MinersHandler:
       self.miners = [Miner(self.blocks_queues[i], self.stop_mining_queues[i], self.outcome_queues[i], writer_address) for i in range(n_miners)]
       self.hearing_miners = [threading.Thread(target=self.hearOutcomeFromMiner, args=(i,)) for i in range(n_miners)]
       self.last_hash = None
+      self.difficulty = 1
+      self.proccesedBlocks = 0
+      self.startTime = datetime.datetime.now()
       self.start()
 
+    def checkProccesedBlock(self):
+        self.proccesedBlocks +=1
+        if self.proccesedBlocks >= DIFFICULTY_MINED_BLOCKS:
+            elapsedTime = (datetime.datetime.now() - self.startTime).total_seconds()
+            self.difficulty *= (12/(elapsedTime/DIFFICULTY_MINED_BLOCKS))
+            self.proccesedBlocks = 0
+            self.startTime = datetime.datetime.now()
+            
+
     def send(self, chunks):
+         
+        self.checkProccesedBlock()
         print("voy a mandar {}".format(chunks))
         print("el lasthash es {}".format(self.last_hash))
-        block = Block(self.last_hash, 1, chunks)
+        block = Block(self.last_hash, self.difficulty, chunks)
         block.setTimestamp(datetime.datetime.now())
 
         self.sendBlock(block.serialize())

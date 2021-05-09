@@ -2,6 +2,8 @@ from hashlib import sha256
 import json
 import datetime
 
+from constants import *
+
 
 class Block:
     def __init__(self, prev_hash, difficulty, chunks):
@@ -30,7 +32,7 @@ class Block:
 
     def asDict(self):
         copy_header = self.header
-        copy_header["timestamp"] = copy_header["timestamp"].strftime("%m/%d/%Y, %H:%M:%S")
+        copy_header["timestamp"] = copy_header["timestamp"].strftime(TIMESTAMP_FORMAT)
         return {"chunks": self.chunks, "header": copy_header}
 
     def prevHash(self):
@@ -42,5 +44,6 @@ class Block:
         block = cls(json_data["header"]["prev_hash"],
                     json_data["header"]["difficulty"], json_data["chunks"])
         block.header["nonce"] = json_data["header"]["nonce"]
-        block.header["timestamp"] = json_data["header"]["timestamp"]
+        block.header["timestamp"] = datetime.datetime.strptime(json_data["header"]["timestamp"], TIMESTAMP_FORMAT)
+
         return block
