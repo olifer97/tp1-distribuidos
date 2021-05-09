@@ -1,8 +1,5 @@
 #!/usr/bin/env python3
-
 import datetime
-
-from block import Block
 from miners_handler import MinersHandler
 
 #import socket
@@ -23,13 +20,13 @@ PORT = int(os.environ["WRITER_PORT"])
 
 def main():
     handler = MinersHandler(2, (HOST, PORT))
-    # add direction to other entities
-    chunks = ["hola", "como", "estas"]
-    block = Block(123, 1, chunks)
-    block.setTimestamp(datetime.datetime.now())
 
-    handler.sendBlock(block)
-    #handler.join()
+    for i in range(5):
+        chunks = ["hola", "como", "estas", i]
+
+        handler.send(chunks)
+        
+        #handler.join()
 
 
 

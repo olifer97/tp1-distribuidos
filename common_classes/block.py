@@ -26,13 +26,19 @@ class Block:
         return self.header["difficulty"]
 
     def serialize(self):
+        return json.dumps(self.asDict())
+
+    def asDict(self):
         copy_header = self.header
         copy_header["timestamp"] = copy_header["timestamp"].strftime("%m/%d/%Y, %H:%M:%S")
-        return json.dumps({"chunks": self.chunks, "header": copy_header})
+        return {"chunks": self.chunks, "header": copy_header}
+
+    def prevHash(self):
+        return self.header['prev_hash']
 
     @classmethod
     def deserialize(cls, data):
-        json_data = json.load(data)
+        json_data = json.loads(data)
         block = cls(json_data["header"]["prev_hash"],
                     json_data["header"]["difficulty"], json_data["chunks"])
         block.header["nonce"] = json_data["header"]["nonce"]

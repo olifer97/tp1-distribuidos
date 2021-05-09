@@ -5,6 +5,7 @@ import json
 import socket
 
 from utils_sock import *
+from block import Block
 
 
 class Writer(threading.Thread):
@@ -19,6 +20,7 @@ class Writer(threading.Thread):
 
       # Listen for incoming connections
       self.sock.listen(1)
+      self.last_hash = None
 
     def run(self):
       while True:
@@ -29,10 +31,23 @@ class Writer(threading.Thread):
 
         print("recibi el tamano del bloque {}".format(size_block))
 
-        block = recv(connection, size_block).decode('utf-8')
-        print("[WRITER] recibi {}".format(block))
+        block_data = json.loads(recv(connection, size_block).decode('utf-8'))
+        print("[WRITER] recibi {}".format(block_data))
+
+        #block = Block.deserialize(block_data['info'])
+
+        print("lasthash {} block prev hash {}".format(self.last_hash, block_data['info']['header']['prev_hash']))
+
+        if self.last_hash != block_data['info']['header']['prev_hash']:
+          print("FALLO {}".format(block_data['hash']))
+          result = False
+        else:
+          self.last_hash = block_data['hash']
+          print("EXITO! {}".format(block_data['hash']))
+          result = True
+          with open('{}.json'.format(block_data['hash']), 'w') as f:
+            json.dump(block_data['info'], f)
         #intentar guardar en los archivos
-        send(connection, ACK_SCHEME.pack(True)) #mando si fue bien o no
+        send(connection, ACK_SCHEME.pack(result)) #mando si fue bien o no
         close(connection)
-        break
       close(self.sock)

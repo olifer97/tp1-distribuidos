@@ -4,6 +4,7 @@ import time
 import random
 import json
 from utils_sock import *
+from block import Block
 
 WRITER_REPONSE_SIZE = 1
 
@@ -24,26 +25,28 @@ class Miner(threading.Thread):
       timestamp = datetime.datetime.now()
       block.setTimestamp(timestamp)
       while self.stop_mining_queue.empty() and not self.meetsCondition(block):
-          print("nolologreee")
           block.addNonce()
           block.setTimestamp(datetime.datetime.now())
 
       if self.stop_mining_queue.empty():
         print("paro de minar")
 
-        data = json.dumps({"hash": block.hash(), "block": block.serialize()})
+        block_hash = block.hash()
+
+        data = json.dumps({"hash": block_hash, "info": block.asDict()})
 
         self.sock = create_and_connect_client_socket(self.writer_address)
-
         send(self.sock, number_to_8_bytes(len(data)))
-
         send(self.sock, str.encode(data, 'utf-8'))
 
-        blockchain_response = ACK_SCHEME.unpack(recv(self.sock, WRITER_REPONSE_SIZE))
+        blockchain_response = ACK_SCHEME.unpack(recv(self.sock, WRITER_REPONSE_SIZE))[0]
 
-        outcome = {"success": blockchain_response, "hash": block.hash()}
+        print("recibi el ack {}".format(blockchain_response))
+
+        outcome = {"success": blockchain_response, "hash": block_hash}
       else:
         print("me mandaron a parar")
+        self.stop_mining_queue.get_nowait()
         outcome = {"success": False}
 
       return self.outcome_queue.put(json.dumps(outcome))
@@ -51,9 +54,7 @@ class Miner(threading.Thread):
 
     def run(self):
       while True:
-        print("HOLAAAA")
-        block = self.queue_blocks.get()
-        print("recibi un bloque: {}".format(block.serialize()))
-        self.mine(block)
+        block_data = self.queue_blocks.get()
+        print("recibi un bloque: {}".format(block_data))
+        self.mine(Block.deserialize(block_data))
         self.queue_blocks.task_done()
-        break

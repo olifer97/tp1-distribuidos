@@ -1,7 +1,9 @@
 import threading, queue
 import datetime
 from miner import Miner
+from block import Block
 import json
+import asyncio
 
 
 class MinersHandler:
@@ -12,13 +14,24 @@ class MinersHandler:
       self.n_miners = n_miners
       self.miners = [Miner(self.blocks_queues[i], self.stop_mining_queues[i], self.outcome_queues[i], writer_address) for i in range(n_miners)]
       self.hearing_miners = [threading.Thread(target=self.hearOutcomeFromMiner, args=(i,)) for i in range(n_miners)]
-
+      self.last_hash = None
       self.start()
 
+    def send(self, chunks):
+        print("voy a mandar {}".format(chunks))
+        print("el lasthash es {}".format(self.last_hash))
+        block = Block(self.last_hash, 1, chunks)
+        block.setTimestamp(datetime.datetime.now())
+
+        self.sendBlock(block.serialize())
+
     def sendBlock(self, block):
-        self.stop_mining_queues[0].put(True)
         for queue in self.blocks_queues:
             queue.put(block)
+            queue.join()
+
+    def waitQueues(self):
+        for queue in self.blocks_queues:
             queue.join()
 
     def stopOtherMiners(self, succedeedMiner):
@@ -40,14 +53,13 @@ class MinersHandler:
         while True:
             outcome_data = self.outcome_queues[miner].get()
             outcome = json.loads(outcome_data)
-            if outcome['success']:
-                print("lo logro! q capo sos")
+            if bool(outcome['success']):
+                print("lo logro! q capo sos {}".format(outcome["hash"]))
+                self.last_hash = outcome["hash"]
                 self.stopOtherMiners(miner)
-                break
             else:
                 #save in stats
                 print("fallo pobrecito")
-                break
         
         
 
