@@ -3,7 +3,7 @@ import datetime
 from miner import Miner
 from block import Block
 import json
-import asyncio
+import random
 
 DIFFICULTY_MINED_BLOCKS = 256
 
@@ -41,6 +41,7 @@ class MinersHandler:
         self.sendBlock(block.serialize())
 
     def sendBlock(self, block):
+        random.shuffle(self.blocks_queues)
         for queue in self.blocks_queues:
             queue.put(block)
             queue.join()
@@ -69,7 +70,7 @@ class MinersHandler:
             outcome_data = self.outcome_queues[miner].get()
             outcome = json.loads(outcome_data)
             if bool(outcome['success']):
-                print("lo logro! q capo sos {}".format(outcome["hash"]))
+                print("lo logro! q capo sos {} {}".format(miner, outcome["hash"]))
                 self.last_hash = outcome["hash"]
                 self.stopOtherMiners(miner)
             else:

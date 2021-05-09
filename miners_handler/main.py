@@ -21,7 +21,7 @@ PORT = int(os.environ["WRITER_PORT"])
 def main():
     handler = MinersHandler(2, (HOST, PORT))
 
-    for i in range(270):
+    for i in range(10):
         chunks = ["hola", "como", "estas", i]
 
         handler.send(chunks)
