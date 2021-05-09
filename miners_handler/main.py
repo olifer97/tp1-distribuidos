@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import datetime
 from miners_handler import MinersHandler
+import queue
 
 #import socket
 import sys
@@ -19,14 +20,24 @@ PORT = int(os.environ["WRITER_PORT"])
 
 
 def main():
-    handler = MinersHandler(2, (HOST, PORT))
+    chunks_queue = queue.Queue()
+    handler = MinersHandler(2, chunks_queue, (HOST, PORT))
 
-    for i in range(10):
+    handler.start()
+
+    print("tengo q estar aca")
+
+    for i in range(270):
         chunks = ["hola", "como", "estas", i]
 
-        handler.send(chunks)
+        for chunk in chunks:
+            chunks_queue.put(chunk)
         
-        #handler.join()
+        chunks_queue.join()
+
+        #handler.send(chunks)
+        
+    #handler.join()
 
 
 
