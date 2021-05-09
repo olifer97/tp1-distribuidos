@@ -7,7 +7,7 @@ import json
 import random
 
 DIFFICULTY_MINED_BLOCKS = 256
-SECONDS_WAITING_CHUNK = 5
+SECONDS_WAITING_CHUNK = 30
 
 class MinersHandler(threading.Thread):
     def __init__(self, n_miners, chunks_queue, writer_address):
@@ -91,10 +91,12 @@ class MinersHandler(threading.Thread):
                 chunk = self.chunks_queue.get(timeout=SECONDS_WAITING_CHUNK)
                 self.block.addChunk(chunk)
                 if self.block.isFull():
+                    print("BLOQUE LLENO")
                     self.send()
                 self.chunks_queue.task_done()
             except queue.Empty:
                 if not self.block.isEmpty():
+                    print("SE CUMPLIO EL TIMEOUT")
                     self.send()
 
             

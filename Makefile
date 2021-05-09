@@ -6,17 +6,17 @@ default: build
 
 all:
 
-miners_handler:
-	docker build -f ./miners_handler/Dockerfile -t "miners_handler:latest" .
-.PHONY: miners_handler
+api:
+	docker build -f ./api/Dockerfile -t "api:latest" .
+.PHONY: api
 
 blockchain:
 	docker build -f ./blockchain/Dockerfile -t "blockchain:latest" .
-.PHONY: miners_handler
+.PHONY: blockchain
 
 docker-image:
 	docker build -f ./blockchain/Dockerfile -t "blockchain:latest" .
-	docker build -f ./miners_handler/Dockerfile -t "miners_handler:latest" .
+	docker build -f ./api/Dockerfile -t "api:latest" .
 .PHONY: docker-image
 
 docker-compose-up: docker-image

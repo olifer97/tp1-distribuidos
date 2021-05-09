@@ -8,19 +8,23 @@ services:
       - PYTHONUNBUFFERED=1
       - WRITER_IP=0.0.0.0
       - WRITER_PORT=12345
-      - MINERS_HANDLER_LISTEN_CONNECTIONS=2
+      - api_LISTEN_CONNECTIONS=2
     networks:
       - blockchain_system
 
-  miners_handler:
-    container_name: miners_handler
-    image: miners_handler:latest
+  api:
+    container_name: api
+    image: api:latest
     entrypoint: python3 /main.py
     environment:
       - PYTHONUNBUFFERED=1
       - WRITER_IP=blockchain
       - WRITER_PORT=12345
-      - MINERS_HANDLER_LISTEN_CONNECTIONS=2
+      - API_PORT=5000
+      - N_MINERS=5
+      - api_LISTEN_CONNECTIONS=2
+    ports:
+      - "5000:5000"
     networks:
       - blockchain_system
     depends_on: 
