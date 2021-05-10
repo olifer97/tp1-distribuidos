@@ -11,11 +11,10 @@ import sys
 import os
 
 N_MINERS = int(os.environ["N_MINERS"])
-WRITER_HOST = os.environ["WRITER_IP"]
+BLOCKCHAIN_HOST = os.environ["BLOCKCHAIN_IP"]
 WRITER_PORT = int(os.environ["WRITER_PORT"])
 
-READER_HOST = ''#os.environ["READER_IP"]
-READER_PORT = 1234#int(os.environ["READER_PORT"])
+READER_PORT = int(os.environ["READER_PORT"])
 
 API_PORT = int(os.environ["API_PORT"])
 
@@ -26,10 +25,10 @@ def main():
     stats_queue = queue.Queue()
     response_queue = queue.Queue()
 
-    miners_handler = MinersHandler(N_MINERS, chunks_queue, stats_queue, (WRITER_HOST, WRITER_PORT))
+    miners_handler = MinersHandler(N_MINERS, chunks_queue, stats_queue, (BLOCKCHAIN_HOST, WRITER_PORT))
     miners_handler.start()
 
-    query_handler = QueryHandler(N_MINERS, query_queue, stats_queue, response_queue, (WRITER_HOST, WRITER_PORT), (READER_HOST, READER_PORT))
+    query_handler = QueryHandler(N_MINERS, query_queue, stats_queue, response_queue, (BLOCKCHAIN_HOST, WRITER_PORT), (BLOCKCHAIN_HOST, READER_PORT))
     query_handler.start()
 
     request_handler = RequestHandler(API_PORT, 1, chunks_queue, query_queue, response_queue)

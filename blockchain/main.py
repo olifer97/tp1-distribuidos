@@ -2,11 +2,13 @@
 #import socket
 import sys
 import os
-from blockchain import Blockchain
+from writer_manager import WriterManager
+from reader_manager import ReaderManager
 
 # TODO: Check errors
-HOST = os.environ["WRITER_IP"]
-PORT = int(os.environ["WRITER_PORT"])
+HOST = os.environ["BLOCKCHAIN_IP"]
+WRITER_PORT = int(os.environ["WRITER_PORT"])
+READER_PORT = int(os.environ["READER_PORT"])
 #LISTEN_CONNECTIONS = int(os.environ["SERVER_LISTEN_CONNECTIONS"])
 
 #s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -14,9 +16,11 @@ PORT = int(os.environ["WRITER_PORT"])
 
 
 def main():
-    blockchain = Blockchain(HOST, PORT)
+    writer = WriterManager(HOST, WRITER_PORT)
+    writer.start()
 
-    blockchain.run()
+    readers = ReaderManager(HOST, READER_PORT)
+    readers.start()
 
 
 if __name__ == "__main__":

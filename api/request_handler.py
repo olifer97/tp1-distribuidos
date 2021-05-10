@@ -3,8 +3,12 @@ import logging
 import time
 import json
 import threading
+import datetime
+from utils_sock import *
+from constants import *
 
 CHUNK_SIZE = 65536
+QUERY_SIZE = 1024
 
 class RequestHandler:
     def __init__(self, port, listen_backlog, chunks_queue, query_queue, response_queue):
@@ -24,8 +28,9 @@ class RequestHandler:
         while True:
             response = self.response_queue.get()
             response['socket'].send(str.encode(json.dumps(response['info']), 'utf-8'))
-            self.response_queue.task_done()
             response['socket'].close()
+            self.response_queue.task_done()
+            
 
 
     def run(self):
@@ -53,9 +58,7 @@ class RequestHandler:
         """
         try:
             msg = client_sock.recv(2).rstrip()
-            logging.info(
-                'Request received from connection {}. Operation: {}'
-                    .format(client_sock.getpeername(), msg))
+            logging.info('Request received from connection. Operation: {}'.format(msg))
             
             response = ""
             if msg == b"CH": #send chunk
@@ -63,23 +66,29 @@ class RequestHandler:
                 logging.info('Received chunk --> {}'.format(chunk))
                 self.chunks_queue.put(chunk)
                 self.chunks_queue.join()
-                response = "Se estaria guardando tu bloque"
-                client_sock.send("{}\n".format(response).encode('utf-8'))
+                client_sock.send("{'response': 'Chunk will be proccesed'}".encode('utf-8'))
+                client_sock.close()
             elif msg == b"ST": #request stats
-                logging.info("MANDO LA REQUEST DE ST")
                 self.query_queue.put({"socket": client_sock, "query": {"type": "st"}})
-                logging.info('Asking stats to Mining Logic!')
+                logging.info('Query Stats')
             elif msg == b"GH": #request block by hash
-                logging.info('Asking for hash block!')
-                response = "\{ hash:asd123 \}"
+                hash = int(client_sock.recv(QUERY_SIZE).rstrip().decode())
+                self.query_queue.put({"socket": client_sock, "query": {"type": "gh", "hash": hash}})
+                logging.info('Query Block by hash: {}'.format(hash))
             elif msg == b"GM": #request blocks in a minute
-                logging.info('Asking for hashes in minute!')
-                response = "asd123,qwe345"
+                string_timestamp = client_sock.recv(QUERY_SIZE).rstrip().decode()
+                timestamp = datetime.datetime.strptime(string_timestamp, TIMESTAMP_FORMAT)
+                self.query_queue.put({"socket": client_sock, "query": {"type": "gm", "timestamp": string_timestamp}})
+                logging.info('Request for blocks in minute: {}'.format(string_timestamp))
             else:
-                logging.info('Unknown operation')
-                response = "Invalid operation"
-        except OSError:
-            logging.info("Error while reading socket {}".format(client_sock))
+                logging.info("Unknown operation")
+                client_sock.send("{'response': 'Unknown operation'}".encode('utf-8'))
+                client_sock.close()
+        except:
+            logging.info("Error with request")
+            client_sock.send("{'response': 'Error processing request'}".encode('utf-8'))
+            client_sock.close()
+
 
 
 
