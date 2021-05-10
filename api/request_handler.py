@@ -68,9 +68,6 @@ class RequestHandler:
             elif msg == b"ST": #request stats
                 logging.info("MANDO LA REQUEST DE ST")
                 self.query_queue.put({"socket": client_sock, "query": {"type": "st"}})
-                #self.query_queue.join()
-                #response = self.query_queue.get()
-                #self.query_queue.join()
                 logging.info('Asking stats to Mining Logic!')
             elif msg == b"GH": #request block by hash
                 logging.info('Asking for hash block!')

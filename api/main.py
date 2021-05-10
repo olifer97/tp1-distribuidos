@@ -29,7 +29,7 @@ def main():
     miners_handler = MinersHandler(N_MINERS, chunks_queue, stats_queue, (WRITER_HOST, WRITER_PORT))
     miners_handler.start()
 
-    query_handler = QueryHandler(query_queue, stats_queue, response_queue, (WRITER_HOST, WRITER_PORT), (READER_HOST, READER_PORT))
+    query_handler = QueryHandler(N_MINERS, query_queue, stats_queue, response_queue, (WRITER_HOST, WRITER_PORT), (READER_HOST, READER_PORT))
     query_handler.start()
 
     request_handler = RequestHandler(API_PORT, 1, chunks_queue, query_queue, response_queue)

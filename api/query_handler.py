@@ -6,23 +6,38 @@ from block import Block
 import json
 import random
 import logging
+import os
 
 DIFFICULTY_MINED_BLOCKS = 256
 SECONDS_WAITING_CHUNK = 30
 
+STATS_FILE = "stats.json"
+
 class QueryHandler(threading.Thread):
-    def __init__(self, query_queue, stats_queue, response_queue, writer_address, reader_address):
+    def __init__(self, n_miners, query_queue, stats_queue, response_queue, writer_address, reader_address):
         threading.Thread.__init__(self)
         self.query_queue = query_queue
         self.response_queue = response_queue
         self.writer_address = writer_address
         self.reader_address = reader_address
-        self.miner_stats = {}
+        self.miner_stats = self.initializeStats(n_miners)
         self.stats_queue = stats_queue
         self.hearing_stats = threading.Thread(target=self.hearStats)
-        logging.info("ME ESTOY CREANDO SOY EL QUERY HANDLERRRR")
-
         self.hearing_stats.start()
+
+    def initializeStats(self, n_miners):
+        if not os.path.exists(STATS_FILE):
+            stats = {}
+            for i in range(n_miners):
+                stats[i] = { "success": 0, "failed": 0}
+            return stats
+        with open(STATS_FILE) as f:
+            data = json.load(f)
+
+    def writeStats(self):
+        with open(STATS_FILE, 'w') as f:
+          json.dump(self.miner_stats, f)
+        
 
     def hearStats(self):
         logging.info("empiezo a escuchar las stats")
@@ -32,9 +47,10 @@ class QueryHandler(threading.Thread):
             if 'success' in stats_data:
                 self.miner_stats[stats_data["miner"]] = self.miner_stats.get(stats_data["miner"], { 'success': 0})
                 self.miner_stats[stats_data["miner"]]['success'] += 1
-            elif stats_data["failed"]:
+            elif 'failed' in stats_data:
                 self.miner_stats[stats_data["miner"]] = self.miner_stats.get(stats_data["miner"], { 'failed': 0})
                 self.miner_stats[stats_data["miner"]]['failed'] += 1
+            self.writeStats()
 
     def doRequest(self, request):
         # parse request and send to wrter o reader
