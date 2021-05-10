@@ -4,6 +4,7 @@ import time
 import json
 import threading
 import datetime
+import queue
 from utils_sock import *
 from constants import *
 
@@ -64,8 +65,7 @@ class RequestHandler:
             if msg == b"CH": #send chunk
                 chunk = client_sock.recv(CHUNK_SIZE).rstrip().decode()
                 logging.info('Received chunk --> {}'.format(chunk))
-                self.chunks_queue.put(chunk)
-                self.chunks_queue.join()
+                self.chunks_queue.put(chunk, block=False)
                 client_sock.send("{'response': 'Chunk will be proccesed'}".encode('utf-8'))
                 client_sock.close()
             elif msg == b"ST": #request stats
@@ -84,6 +84,10 @@ class RequestHandler:
                 logging.info("Unknown operation")
                 client_sock.send("{'response': 'Unknown operation'}".encode('utf-8'))
                 client_sock.close()
+        except queue.Full:
+            logging.info("Queue full")
+            client_sock.send("{'response': 'System overload try sending chunk later'}".encode('utf-8'))
+            client_sock.close()
         except:
             logging.info("Error with request")
             client_sock.send("{'response': 'Error processing request'}".encode('utf-8'))

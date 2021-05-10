@@ -18,9 +18,11 @@ READER_PORT = int(os.environ["READER_PORT"])
 
 API_PORT = int(os.environ["API_PORT"])
 
+THRESHHOLD = int(os.environ["CHUNKS_THRESHHOLD"])
+
 def main():
 
-    chunks_queue = queue.Queue()
+    chunks_queue = queue.Queue(maxsize=THRESHHOLD)
     query_queue = queue.Queue()
     stats_queue = queue.Queue()
     response_queue = queue.Queue()
