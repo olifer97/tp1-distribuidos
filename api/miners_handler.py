@@ -10,9 +10,10 @@ DIFFICULTY_MINED_BLOCKS = 256
 SECONDS_WAITING_CHUNK = 30
 
 class MinersHandler(threading.Thread):
-    def __init__(self, n_miners, chunks_queue, writer_address):
+    def __init__(self, n_miners, chunks_queue, stats_queue, writer_address):
         threading.Thread.__init__(self)
         self.chunks_queue = chunks_queue
+        self.stats_queue = stats_queue
         self.blocks_queues = [queue.Queue() for i in range(n_miners)]
         self.stop_mining_queues = [queue.Queue() for i in range(n_miners)]
         self.outcome_queues = [queue.Queue() for i in range(n_miners)]
@@ -57,6 +58,11 @@ class MinersHandler(threading.Thread):
         for i in range(self.n_miners):
             if i != succedeedMiner:
                 self.stop_mining_queues[i].put(True)
+                print("mando q salio todo mal")
+                self.stats_queue.put({"miner": i, "failed": True})
+            else:
+                print("mando que salio todo bien")
+                self.stats_queue.put({"miner": i, "success": True})
 
     def startMiners(self):
         for i in range(self.n_miners):

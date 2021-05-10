@@ -1,15 +1,32 @@
 import socket
 import logging
+import time
+import json
+import threading
 
 CHUNK_SIZE = 65536
 
 class RequestHandler:
-    def __init__(self, port, listen_backlog, chunks_queue):
+    def __init__(self, port, listen_backlog, chunks_queue, query_queue, response_queue):
         # Initialize server socket
         self._server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self._server_socket.bind(('', port))
         self._server_socket.listen(listen_backlog)
         self.chunks_queue = chunks_queue
+        self.query_queue = query_queue
+        self.response_thread = threading.Thread(target=self.hearResponses)
+        self.response_queue = response_queue
+
+        self.response_thread.start()
+
+    
+    def hearResponses(self):
+        while True:
+            response = self.response_queue.get()
+            response['socket'].send(str.encode(json.dumps(response['info']), 'utf-8'))
+            self.response_queue.task_done()
+            response['socket'].close()
+
 
     def run(self):
         """
@@ -47,9 +64,14 @@ class RequestHandler:
                 self.chunks_queue.put(chunk)
                 self.chunks_queue.join()
                 response = "Se estaria guardando tu bloque"
+                client_sock.send("{}\n".format(response).encode('utf-8'))
             elif msg == b"ST": #request stats
+                logging.info("MANDO LA REQUEST DE ST")
+                self.query_queue.put({"socket": client_sock, "query": {"type": "st"}})
+                #self.query_queue.join()
+                #response = self.query_queue.get()
+                #self.query_queue.join()
                 logging.info('Asking stats to Mining Logic!')
-                response = "Miners: 3\nSuccesful: 1"
             elif msg == b"GH": #request block by hash
                 logging.info('Asking for hash block!')
                 response = "\{ hash:asd123 \}"
@@ -59,12 +81,9 @@ class RequestHandler:
             else:
                 logging.info('Unknown operation')
                 response = "Invalid operation"
-
-            client_sock.send("{}\n".format(response).encode('utf-8'))
         except OSError:
             logging.info("Error while reading socket {}".format(client_sock))
-        finally:
-            client_sock.close()
+
 
 
     def __accept_new_connection(self):
