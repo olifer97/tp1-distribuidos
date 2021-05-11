@@ -10,15 +10,15 @@ from constants import *
 '''
 Request format
 
-{"type": "CH/ST/GH/GM", "parameter": if necessary }
+{"type": "POTS_CHUNK/GET_STATS/GET_BLOCK/GET_BLOCKS", "parameter": if necessary }
 
-CH -> Save chunk in blockchain. Parameter: chunk
+POTS_CHUNK -> Save chunk in blockchain. Parameter: chunk
 
-ST -> Get miners stats. Parameter: -
+GET_STATS -> Get miners stats. Parameter: -
 
-GH -> Get bloch by hash. Parameter: hash
+GET_BLOCK -> Get bloch by hash. Parameter: hash
 
-GM -> Get blocks in a minute interval. Parameter: timestamp in "%m-%d-%Y, %H:%M:%S" format
+GET_BLOCKS -> Get blocks in a minute interval. Parameter: timestamp in "%m-%d-%Y, %H:%M:%S" format
 
 '''
 

@@ -9,7 +9,7 @@ import time
 import random
 
 DIFFICULTY_MINED_BLOCKS = 256
-SECONDS_WAITING_CHUNK = 5
+SECONDS_WAITING_CHUNK = 10
 
 class MinersHandler(threading.Thread):
     def __init__(self, n_miners, chunks_queue, stats_queue, writer_address):
