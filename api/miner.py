@@ -8,7 +8,6 @@ from block import Block
 
 WRITER_REPONSE_SIZE = 1
 
-
 class Miner(threading.Thread):
     def __init__(self, queue_blocks, stop_mining_queue, outcome_queue, writer_address):
       threading.Thread.__init__(self)
@@ -16,7 +15,6 @@ class Miner(threading.Thread):
       self.stop_mining_queue = stop_mining_queue
       self.outcome_queue = outcome_queue
       self.writer_address = writer_address
-      #print("el socket con el writer {}".format(self.sock))
 
     def meetsCondition(self, block):
       return block.hash() < (2**256) / block.difficulty()
@@ -33,11 +31,9 @@ class Miner(threading.Thread):
 
         data = json.dumps({"hash": block_hash, "info": block.asDict()})
 
-        self.sock = create_and_connect_client_socket(self.writer_address)
-        send(self.sock, number_to_8_bytes(len(data)))
-        send(self.sock, str.encode(data, 'utf-8'))
+        self.sock = connect_send(data, self.writer_address)
 
-        blockchain_response = ACK_SCHEME.unpack(recv(self.sock, WRITER_REPONSE_SIZE))[0]
+        blockchain_response = ACK_SCHEME.unpack(recv_and_cut(self.sock, WRITER_REPONSE_SIZE, decode=False))[0]
 
         outcome = {"success": blockchain_response, "hash": block_hash}
       else:

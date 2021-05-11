@@ -34,6 +34,17 @@ def create_and_connect_client_socket(server_address):
     sock.close()
     return None
 
+def connect_send(data, address):
+  sock = create_and_connect_client_socket(address)
+  send(sock, str.encode(data, 'utf-8'))
+  return sock
+
+def recv_and_cut(sock, size, decode = True):
+  data = sock.recv(size).rstrip()
+  if decode:
+    return data.decode()
+  return data
+
 def send(sock, data):
   try:
     sock.sendall(data)

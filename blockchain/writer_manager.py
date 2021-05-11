@@ -11,7 +11,6 @@ from block import Block
 from constants import *
 from writer import Writer
 
-
 class WriterManager(threading.Thread):
     def __init__(self, host, port):
       threading.Thread.__init__(self)
@@ -34,9 +33,9 @@ class WriterManager(threading.Thread):
         # leer del socket y escribir en el archivo
         connection, client_address = self.sock.accept()
 
-        size_block = bytes_8_to_number(recv(connection, NUMBER_SIZE))
+        #size_block = bytes_8_to_number(recv(connection, NUMBER_SIZE))
 
-        block_data = json.loads(recv(connection, size_block).decode('utf-8'))
+        block_data = json.loads(recv_and_cut(connection, MAX_BLOCK_SIZE))
 
         if self.last_hash != block_data['info']['header']['prev_hash']:
           result = False

@@ -53,12 +53,8 @@ class QueryHandler(threading.Thread):
 
     def queryBlockchain(self, query_info): # TODO agregar mas threads
         
-        self.sock = create_and_connect_client_socket(self.reader_address)
-        encoded = str.encode(json.dumps(query_info), 'utf-8')
-        send(self.sock, encoded)
-
-        response = self.sock.recv(QUERY_RESPONSE_SIZE).rstrip().decode()
-
+        self.sock = connect_send(json.dumps(query_info), self.reader_address)
+        response = recv_and_cut(self.sock, QUERY_RESPONSE_SIZE)
         close(self.sock)
 
         return response

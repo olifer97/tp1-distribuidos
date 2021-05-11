@@ -4,8 +4,6 @@ import datetime
 
 from constants import *
 
-MAX_ENTRIES = 256
-
 
 class Block:
     def __init__(self, prev_hash, difficulty, chunks=[]):

@@ -8,8 +8,8 @@ import queue
 from utils_sock import *
 from constants import *
 
-CHUNK_SIZE = 65536
 QUERY_SIZE = 1024
+OP_SIZE = 2
 
 class RequestHandler:
     def __init__(self, port, listen_backlog, chunks_queue, query_queue, response_queue, n_workers):
@@ -64,12 +64,12 @@ class RequestHandler:
         client socket will also be closed
         """
         try:
-            msg = client_sock.recv(2).rstrip()
+            msg = recv_and_cut(client_sock, OP_SIZE, decode=False)
             logging.info('Request received from connection. Operation: {}'.format(msg))
             
             response = ""
             if msg == b"CH": #send chunk
-                chunk = client_sock.recv(CHUNK_SIZE).rstrip().decode()
+                chunk = recv_and_cut(client_sock, CHUNK_SIZE)
                 logging.info('Received chunk --> {}'.format(chunk))
                 self.chunks_queue.put(chunk, block=False)
                 client_sock.send("{'response': 'Chunk will be proccesed'}".encode('utf-8'))
@@ -78,11 +78,11 @@ class RequestHandler:
                 self.query_queue.put({"socket": client_sock, "query": {"type": "st"}})
                 logging.info('Query Stats')
             elif msg == b"GH": #request block by hash
-                hash = int(client_sock.recv(QUERY_SIZE).rstrip().decode())
+                hash = int(recv_and_cut(client_sock, QUERY_SIZE))
                 self.query_queue.put({"socket": client_sock, "query": {"type": "gh", "hash": hash}})
                 logging.info('Query Block by hash: {}'.format(hash))
             elif msg == b"GM": #request blocks in a minute
-                string_timestamp = client_sock.recv(QUERY_SIZE).rstrip().decode()
+                string_timestamp = recv_and_cut(client_sock, QUERY_SIZE)
                 timestamp = datetime.datetime.strptime(string_timestamp, TIMESTAMP_FORMAT)
                 self.query_queue.put({"socket": client_sock, "query": {"type": "gm", "timestamp": string_timestamp}})
                 logging.info('Request for blocks in minute: {}'.format(string_timestamp))
