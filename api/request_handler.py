@@ -69,28 +69,28 @@ class RequestHandler:
 
             op = req['type']
             
-            if op == "CH": #send chunk
+            if op == POST_CHUNK: #send chunk
                 chunk = req['parameter']
                 logging.info('Received chunk: {}'.format(chunk))
                 self.chunks_queue.put(chunk, block=False)
                 msg = {'response': 'Chunk {} will be proccesed'.format(chunk)}
                 client_sock.send(json.dumps(msg).encode('utf-8'))
                 client_sock.close()
-            elif op == "ST": #request stats
+            elif op == GET_STATS: #request stats
                 self.query_queue.put({"socket": client_sock, "query": {"type": "st"}})
                 logging.info('Query Stats')
-            elif op == "GH": #request block by hash
+            elif op == GET_BLOCK: #request block by hash
                 hash = req['parameter']
                 self.query_queue.put({"socket": client_sock, "query": {"type": "gh", "hash": hash}})
                 logging.info('Query Block by hash: {}'.format(hash))
-            elif op == "GM": #request blocks in a minute
+            elif op == GET_BLOCKS: #request blocks in a minute
                 string_timestamp = req['parameter']
                 timestamp = datetime.datetime.strptime(string_timestamp, TIMESTAMP_FORMAT)
                 self.query_queue.put({"socket": client_sock, "query": {"type": "gm", "timestamp": string_timestamp}})
                 logging.info('Request for blocks in minute: {}'.format(string_timestamp))
             else:
                 logging.info("Unknown operation")
-                msg = {'response': 'Unkown operation: {}'.format(op)}
+                msg = {'response': 'Unknown operation: {}'.format(op)}
                 client_sock.send(json.dumps(msg).encode('utf-8'))
                 client_sock.close()
         except queue.Full:
