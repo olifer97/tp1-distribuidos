@@ -8,7 +8,7 @@ make docker-compose-up
 make docker-compose-logs
 ```
 
-- GET_CHUNKS: `client.py -c "CHANK A MANDAR"`
+- POST_CHUNKS: `client.py -c "CHANK A MANDAR"`
 
 - GET_BLOCK: `client.py -b HASH_A_PEDIR`
 
