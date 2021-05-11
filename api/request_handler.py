@@ -12,7 +12,7 @@ CHUNK_SIZE = 65536
 QUERY_SIZE = 1024
 
 class RequestHandler:
-    def __init__(self, port, listen_backlog, chunks_queue, query_queue, response_queue):
+    def __init__(self, port, listen_backlog, chunks_queue, query_queue, response_queue, n_workers):
         # Initialize server socket
         self._server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self._server_socket.bind(('', port))
@@ -24,6 +24,8 @@ class RequestHandler:
 
         self.response_thread.start()
 
+        self.workers = [threading.Thread(target=self.hearConnections) for i in range(n_workers)]
+
     
     def hearResponses(self):
         while True:
@@ -34,7 +36,7 @@ class RequestHandler:
             
 
 
-    def run(self):
+    def hearConnections(self):
         """
         Dummy Server loop
 
@@ -48,6 +50,10 @@ class RequestHandler:
         while True:
             client_sock = self.__accept_new_connection()
             self.__handle_client_connection(client_sock)
+
+    def run(self):
+        for worker in self.workers:
+            worker.start()
 
 
     def __handle_client_connection(self, client_sock):

@@ -25,7 +25,8 @@ services:
       - API_PORT=5000
       - N_MINERS=5
       - CHUNKS_THRESHHOLD=1
-      - api_LISTEN_CONNECTIONS=2
+      - API_LISTENERS=3
+      - N_WORKERS=3
     ports:
       - "5000:5000"
     networks:

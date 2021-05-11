@@ -16,7 +16,9 @@ WRITER_PORT = int(os.environ["WRITER_PORT"])
 
 READER_PORT = int(os.environ["READER_PORT"])
 
+N_WORKERS = int(os.environ["N_WORKERS"])
 API_PORT = int(os.environ["API_PORT"])
+API_LISTENERS = int(os.environ["API_LISTENERS"])
 
 THRESHHOLD = int(os.environ["CHUNKS_THRESHHOLD"])
 
@@ -33,7 +35,7 @@ def main():
     query_handler = QueryHandler(N_MINERS, query_queue, stats_queue, response_queue, (BLOCKCHAIN_HOST, WRITER_PORT), (BLOCKCHAIN_HOST, READER_PORT))
     query_handler.start()
 
-    request_handler = RequestHandler(API_PORT, 1, chunks_queue, query_queue, response_queue)
+    request_handler = RequestHandler(API_PORT, API_LISTENERS, chunks_queue, query_queue, response_queue, N_WORKERS)
     request_handler.run()
 
     

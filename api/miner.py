@@ -29,8 +29,6 @@ class Miner(threading.Thread):
           block.setTimestamp(datetime.datetime.now())
 
       if self.stop_mining_queue.empty():
-        print("paro de minar")
-
         block_hash = block.hash()
 
         data = json.dumps({"hash": block_hash, "info": block.asDict()})
@@ -40,8 +38,6 @@ class Miner(threading.Thread):
         send(self.sock, str.encode(data, 'utf-8'))
 
         blockchain_response = ACK_SCHEME.unpack(recv(self.sock, WRITER_REPONSE_SIZE))[0]
-
-        print("recibi el ack {}".format(blockchain_response))
 
         outcome = {"success": blockchain_response, "hash": block_hash}
       else:

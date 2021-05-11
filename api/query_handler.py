@@ -55,9 +55,7 @@ class QueryHandler(threading.Thread):
         
         self.sock = create_and_connect_client_socket(self.reader_address)
         encoded = str.encode(json.dumps(query_info), 'utf-8')
-        print("LO ENCOOODEEEE")
         send(self.sock, encoded)
-        print("MANDE LA REQUEST ES {}".format(query_info))
 
         response = self.sock.recv(QUERY_RESPONSE_SIZE).rstrip().decode()
 
