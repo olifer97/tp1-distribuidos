@@ -18,7 +18,10 @@ class Reader(threading.Thread):
 
     
     def getBlock(self, hash):
-        with open("{}.json".format(hash)) as f:
+        filename = "{}.json".format(hash)
+        if not os.path.exists(filename): 
+            return {"response": "Block not found"}
+        with open(filename) as f:
           return json.load(f)
 
     def getBlocksInMinute(self, min_timestamp):

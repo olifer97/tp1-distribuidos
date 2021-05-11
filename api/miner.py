@@ -1,8 +1,8 @@
 import datetime
 import threading
 import time
-import random
 import json
+import logging
 from utils_sock import *
 from block import Block
 
@@ -37,7 +37,7 @@ class Miner(threading.Thread):
 
         outcome = {"success": blockchain_response, "hash": block_hash}
       else:
-        print("me mandaron a parar")
+        logging.info("I should stop mining")
         self.stop_mining_queue.get_nowait()
         outcome = {"success": False}
 
@@ -47,6 +47,6 @@ class Miner(threading.Thread):
     def run(self):
       while True:
         block_data = self.queue_blocks.get()
-        print("recibi un bloque: {}".format(block_data))
+        logging.info("Got block data: {}".format(block_data))
         self.mine(Block.deserialize(block_data))
         self.queue_blocks.task_done()

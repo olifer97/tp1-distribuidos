@@ -5,7 +5,6 @@ from miner import Miner
 from block import Block
 from utils_sock import *
 import json
-import random
 import logging
 import os
 
@@ -39,10 +38,9 @@ class QueryHandler(threading.Thread):
         
 
     def hearStats(self):
-        logging.info("empiezo a escuchar las stats")
         while True:
             stats_data = self.stats_queue.get()
-            logging.info("estaria recibiendo stats {}".format(stats_data))
+            logging.info("Stats update {}".format(stats_data))
             if 'success' in stats_data:
                 self.miner_stats[stats_data["miner"]] = self.miner_stats.get(stats_data["miner"], { 'success': 0})
                 self.miner_stats[stats_data["miner"]]['success'] += 1
@@ -54,14 +52,14 @@ class QueryHandler(threading.Thread):
     def queryBlockchain(self, query_info): # TODO agregar mas threads
         
         self.sock = connect_send(json.dumps(query_info), self.reader_address)
-        response = recv_and_cut(self.sock, QUERY_RESPONSE_SIZE)
+        response = json.loads(recv_and_cut(self.sock, QUERY_RESPONSE_SIZE))
         close(self.sock)
 
         return response
 
     def doRequest(self, request_info):
         # parse request and send to wrter o reader
-        logging.info("la request fue {}".format(request_info))
+        logging.info("Query: {}".format(request_info))
         query = request_info['type']
         if query == 'st':
             return self.miner_stats
@@ -69,14 +67,12 @@ class QueryHandler(threading.Thread):
             return self.queryBlockchain(request_info)
 
     def run(self):
-        logging.info("empiezo a escuchar las requests")
         while True:
             request = self.query_queue.get()
             self.query_queue.task_done()
-            logging.info("la request es {}".format(request))
             response = self.doRequest(request["query"])
-            logging.info("response es {}".format(response))
-            self.response_queue.put({"socket": request["socket"], "info":response})
+            logging.info("Response to query: {}".format(response))
+            self.response_queue.put({"socket": request["socket"], "info": response})
             self.response_queue.join()
 
             

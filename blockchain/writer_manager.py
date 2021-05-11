@@ -1,4 +1,5 @@
 import datetime
+import logging
 import threading
 import time
 import json
@@ -39,7 +40,7 @@ class WriterManager(threading.Thread):
           result = False
         else:
           self.last_hash = block_data['hash']
-          print("EXITO! {}".format(block_data['hash']))
+          logging.info("Block mined with hash: {}".format(block_data['hash']))
           result = True
           self.blocks_queue.put(block_data)
         #intentar guardar en los archivos

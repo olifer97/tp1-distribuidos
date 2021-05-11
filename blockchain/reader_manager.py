@@ -11,8 +11,6 @@ from block import Block
 from constants import *
 from reader import Reader
 
-REQUEST_SIZE = 1024
-
 class ReaderManager(threading.Thread):
     def __init__(self, host, port, n_readers):
       threading.Thread.__init__(self)
@@ -38,10 +36,9 @@ class ReaderManager(threading.Thread):
             self.readers[i].start()
 
     def hearResponses(self):
-        #logging.info("empiezo a escuchar las stats")
         while True:
             response = self.response_queue.get()
-            send(response["socket"], str(response["response"]).encode('utf-8'))
+            send(response["socket"], json.dumps(response["response"]).encode('utf-8'))
 
     def run(self):
       while True:

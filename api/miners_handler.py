@@ -4,8 +4,9 @@ import datetime
 from miner import Miner
 from block import Block
 import json
-import random
+import logging
 import time
+import random
 
 DIFFICULTY_MINED_BLOCKS = 256
 SECONDS_WAITING_CHUNK = 5
@@ -59,10 +60,8 @@ class MinersHandler(threading.Thread):
         for i in range(self.n_miners):
             if i != succedeedMiner:
                 self.stop_mining_queues[i].put(True)
-                print("mando q salio todo mal")
                 self.stats_queue.put({"miner": i, "failed": True})
             else:
-                print("mando que salio todo bien")
                 self.stats_queue.put({"miner": i, "success": True})
 
     def startMiners(self):
@@ -80,13 +79,12 @@ class MinersHandler(threading.Thread):
             outcome_data = self.outcome_queues[miner].get()
             outcome = json.loads(outcome_data)
             if bool(outcome['success']):
-                print("lo logro! q capo sos {} {}".format(
+                logging.info("I succeded in mining {} with hash: {}".format(
                     miner, outcome["hash"]))
                 self.last_hash = outcome["hash"]
                 self.stopOtherMiners(miner)
             else:
-                #save in stats
-                print("fallo pobrecito")
+                logging.info("Failed in mining")
 
     def send(self):
         self.sendBlock(self.block.serialize())
