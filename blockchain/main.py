@@ -1,5 +1,4 @@
 
-#import socket
 import sys
 import os
 from writer_manager import WriterManager
@@ -19,6 +18,7 @@ def parse_config_params():
         config_params["reader_port"] = int(os.environ["READER_PORT"])
         config_params["writer_port"] = int(os.environ["WRITER_PORT"])
         config_params['blockchain_host'] = os.environ["BLOCKCHAIN_IP"]
+        config_params["n_readers"] = int(os.environ["N_READERS"])
     except KeyError as e:
         raise KeyError(
             "Key was not found. Error: {} .Aborting server".format(e))
@@ -33,7 +33,7 @@ def main():
     writer = WriterManager(config['blockchain_host'], config['writer_port'])
     writer.start()
 
-    readers = ReaderManager(config['blockchain_host'], config['reader_port'])
+    readers = ReaderManager(config['blockchain_host'], config['reader_port'], config['n_readers'])
     readers.start()
 
 

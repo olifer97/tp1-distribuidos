@@ -5,11 +5,10 @@ services:
     image: blockchain:latest
     entrypoint: python3 /main.py
     environment:
-      - PYTHONUNBUFFERED=1
       - BLOCKCHAIN_IP=0.0.0.0
       - WRITER_PORT=12345
       - READER_PORT=12346
-      - api_LISTEN_CONNECTIONS=2
+      - N_READERS=5
     networks:
       - blockchain_system
 
@@ -18,7 +17,6 @@ services:
     image: api:latest
     entrypoint: python3 /main.py
     environment:
-      - PYTHONUNBUFFERED=1
       - BLOCKCHAIN_IP=blockchain
       - WRITER_PORT=12345
       - READER_PORT=12346

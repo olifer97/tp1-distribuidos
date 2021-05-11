@@ -33,8 +33,6 @@ class WriterManager(threading.Thread):
         # leer del socket y escribir en el archivo
         connection, client_address = self.sock.accept()
 
-        #size_block = bytes_8_to_number(recv(connection, NUMBER_SIZE))
-
         block_data = json.loads(recv_and_cut(connection, MAX_BLOCK_SIZE))
 
         if self.last_hash != block_data['info']['header']['prev_hash']:
