@@ -1,4 +1,4 @@
-import threading
+from threading import Thread, BoundedSemaphore, Barrier
 import queue
 import datetime
 from miner import Miner
@@ -11,9 +11,9 @@ import random
 DIFFICULTY_MINED_BLOCKS = 256
 SECONDS_WAITING_CHUNK = 10
 
-class MinersHandler(threading.Thread):
+class MinersHandler(Thread):
     def __init__(self, n_miners, chunks_queue, stats_queue, writer_address):
-        threading.Thread.__init__(self)
+        Thread.__init__(self)
         self.chunks_queue = chunks_queue
         self.stats_queue = stats_queue
         self.blocks_queues = [queue.Queue() for i in range(n_miners)]
@@ -22,14 +22,16 @@ class MinersHandler(threading.Thread):
         self.n_miners = n_miners
         self.miners = [Miner(self.blocks_queues[i], self.stop_mining_queues[i],
                              self.outcome_queues[i], writer_address) for i in range(n_miners)]
-        self.hearing_miners = [threading.Thread(
+        self.hearing_miners = [Thread(
             target=self.hearOutcomeFromMiner, args=(i,)) for i in range(n_miners)]
         self.last_hash = None
         self.difficulty = 1
         self.proccesedBlocks = 0
         self.startTime = datetime.datetime.now()
-        self.block = self.createBlock()
+        self.block = self.createEmptyBlock()
+        self.barrier = Barrier(n_miners + 1)
         self.startMiners()
+        
 
     def checkProccesedBlock(self):
         self.proccesedBlocks += 1
@@ -40,17 +42,16 @@ class MinersHandler(threading.Thread):
             self.proccesedBlocks = 0
             self.startTime = datetime.datetime.now()
 
-    def createBlock(self):
+    def createEmptyBlock(self):
         self.checkProccesedBlock()
         newBlock = Block(self.last_hash, self.difficulty, [])
         newBlock.setTimestamp(datetime.datetime.now())
         return newBlock
 
-    def sendBlock(self, block):
-        random.shuffle(self.blocks_queues)
+    def sendBlock(self, block): # TODO: Agregar fairnes
+        #random.shuffle(self.blocks_queues)
         for queue in self.blocks_queues:
             queue.put(block)
-            queue.join()
 
     def waitQueues(self):
         for queue in self.blocks_queues:
@@ -76,6 +77,8 @@ class MinersHandler(threading.Thread):
 
     def hearOutcomeFromMiner(self, miner):
         while True:
+            logging.info("SOY EL HEARING MINER {} POR GETEAT Y VOY A ESPERAR".format(miner))
+            self.barrier.wait()
             outcome_data = self.outcome_queues[miner].get()
             outcome = json.loads(outcome_data)
             if bool(outcome['success']):
@@ -87,8 +90,10 @@ class MinersHandler(threading.Thread):
                 logging.info("Failed in mining")
 
     def send(self):
+        logging.info("SOY EL MINERS HANDLER POR MANDAR Y VOY A ESPERAR")
+        self.barrier.wait()
         self.sendBlock(self.block.serialize())
-        self.block = self.createBlock()
+        self.block = self.createEmptyBlock()
 
     def run(self):
         while True:

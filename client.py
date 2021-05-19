@@ -12,19 +12,6 @@ RESPONSE_SIZE = 1024
 OPTIONS = 'client.py [--chunk <chunk>] [--block <hash>] [--timestamp <timestamp>] [--stats]'
 
 
-class Client(threading.Thread):
-    def __init__(self, address, request_queue):
-      threading.Thread.__init__(self)
-      self.address = address
-      self.request_queue = request_queue
-
-    def run(self):
-      while True:
-        request = self.request_queue.get()
-        sock = connect_send(request, self.address)
-        #close(sock)
-
-
 def send_and_recv(request, address):
     sock = connect_send(json.dumps(request), address)
     return recv_and_cut(sock, RESPONSE_SIZE)

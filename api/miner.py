@@ -23,6 +23,7 @@ class Miner(threading.Thread):
       timestamp = datetime.datetime.now()
       block.setTimestamp(timestamp)
       while self.stop_mining_queue.empty() and not self.meetsCondition(block):
+          info.logging("tratando de encontrar el hash")
           block.addNonce()
           block.setTimestamp(datetime.datetime.now())
 
