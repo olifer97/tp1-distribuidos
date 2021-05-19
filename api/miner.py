@@ -1,5 +1,6 @@
 import datetime
 import threading
+import multiprocessing as mp
 import time
 import json
 import logging
@@ -8,9 +9,9 @@ from block import Block
 
 WRITER_REPONSE_SIZE = 1
 
-class Miner(threading.Thread):
+class Miner(mp.Process):
     def __init__(self, queue_blocks, stop_mining_queue, outcome_queue, writer_address):
-      threading.Thread.__init__(self)
+      mp.Process.__init__(self)
       self.queue_blocks = queue_blocks
       self.stop_mining_queue = stop_mining_queue
       self.outcome_queue = outcome_queue
@@ -50,4 +51,3 @@ class Miner(threading.Thread):
         block_data = self.queue_blocks.get()
         logging.info("Got block data: {}".format(block_data))
         self.mine(Block.deserialize(block_data))
-        self.queue_blocks.task_done()

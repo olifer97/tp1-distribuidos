@@ -1,4 +1,5 @@
 from threading import Thread, BoundedSemaphore, Barrier
+import multiprocessing as mp
 import queue
 import datetime
 from miner import Miner
@@ -16,9 +17,9 @@ class MinersHandler(Thread):
         Thread.__init__(self)
         self.chunks_queue = chunks_queue
         self.stats_queue = stats_queue
-        self.blocks_queues = [queue.Queue() for i in range(n_miners)]
-        self.stop_mining_queues = [queue.Queue() for i in range(n_miners)]
-        self.outcome_queues = [queue.Queue() for i in range(n_miners)]
+        self.blocks_queues = [mp.Queue() for i in range(n_miners)]
+        self.stop_mining_queues = [mp.Queue() for i in range(n_miners)]
+        self.outcome_queues = [mp.Queue() for i in range(n_miners)]
         self.n_miners = n_miners
         self.miners = [Miner(self.blocks_queues[i], self.stop_mining_queues[i],
                              self.outcome_queues[i], writer_address) for i in range(n_miners)]
