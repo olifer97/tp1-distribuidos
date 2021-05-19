@@ -43,7 +43,6 @@ class RequestHandler:
             response = self.response_queue.get()
             response['socket'].send(str.encode(json.dumps(response['info']), 'utf-8'))
             response['socket'].close()
-            self.response_queue.task_done()
             
 
 

@@ -73,6 +73,4 @@ class QueryHandler(threading.Thread):
             response = self.doRequest(request["query"])
             logging.info("Response to query: {}".format(response))
             self.response_queue.put({"socket": request["socket"], "info": response})
-            self.response_queue.join()
-
-            
+ 
