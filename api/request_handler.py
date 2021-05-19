@@ -34,8 +34,9 @@ class RequestHandler:
         self.response_queue = response_queue
 
         self.response_thread.start()
+        self.requests_queue = queue.Queue()
 
-        self.workers = [threading.Thread(target=self.hearConnections) for i in range(n_workers)]
+        self.workers = [threading.Thread(target=self.hearClientRequests, args=(self.requests_queue,)) for i in range(n_workers)]
 
     
     def hearResponses(self):
@@ -46,14 +47,18 @@ class RequestHandler:
             
 
 
-    def hearConnections(self):
+    def hearClientRequests(self, requests_queue):
         while True:
-            client_sock = self.__accept_new_connection()
+            client_sock = self.requests_queue.get()
             self.__handle_client_connection(client_sock)
 
     def run(self):
         for worker in self.workers:
             worker.start()
+
+        while True:
+            client_sock = self.__accept_new_connection()
+            self.requests_queue.put(client_sock)
 
     def __handle_client_connection(self, client_sock):
         """
