@@ -5,8 +5,8 @@ import sys
 import getopt
 import queue
 
-from common_classes.utils_sock import *
-from common_classes.constants import *
+from common.utils_sock import *
+from common.constants import *
 
 BLOCKCHAIN_ADDRESS = ('127.0.0.1', 5000)
 RESPONSE_SIZE = 1024
