@@ -10,18 +10,12 @@ from utils import *
 from block import Block
 from constants import *
 from reader import Reader
+from server_socket import ServerSocket
 
 class ReaderManager(threading.Thread):
     def __init__(self, host, port, n_readers):
       threading.Thread.__init__(self)
-      # Create a TCP/IP socket
-      self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-
-      # Bind the socket to the port
-      self.sock.bind((host, port))
-
-      # Listen for incoming connections
-      self.sock.listen(1)
+      self.socket = ServerSocket(host, port, 1)
 
       self.n_readers = n_readers
       self.request_queue = queue.Queue()
@@ -38,13 +32,14 @@ class ReaderManager(threading.Thread):
     def hearResponses(self):
         while True:
             response = self.response_queue.get()
-            send(response["socket"], json.dumps(response["response"]).encode('utf-8'))
+            response["socket"].send_with_size(json.dumps(response["response"]))
 
     def run(self):
       while True:
         # leer del socket y escribir en el archivo
-        connection, client_address = self.sock.accept()
-        request_data = json.loads(recv_and_cut(connection, REQUEST_SIZE))
-        self.request_queue.put({"socket": connection, "request": request_data})
+        client = self.socket.accept()
+
+        request_data = self.socket.recv_from(client)
+        self.request_queue.put({"socket": client, "request": request_data})
         
-      close(self.sock)
+      self.socket.close()

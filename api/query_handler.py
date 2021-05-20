@@ -7,6 +7,7 @@ from utils import *
 import json
 import logging
 import os
+from client_socket import ClientSocket
 
 STATS_FILE = "stats.json"
 
@@ -50,11 +51,11 @@ class QueryHandler(threading.Thread):
             self.writeStats()
 
     def queryBlockchain(self, query_info): # TODO agregar mas threads
-        
-        self.sock = connect_send(json.dumps(query_info), self.reader_address)
-        response = json.loads(recv_and_cut(self.sock, QUERY_RESPONSE_SIZE))
-        close(self.sock)
 
+        self.sock = ClientSocket(address = self.reader_address)
+        self.sock.send_with_size(json.dumps(query_info))
+        response = self.sock.recv_with_size()
+        self.sock.close()
         return response
 
     def doRequest(self, request_info):
