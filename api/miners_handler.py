@@ -78,20 +78,20 @@ class MinersHandler(Thread):
 
     def hearOutcomeFromMiner(self, miner):
         while True:
-            logging.info("SOY EL HEARING MINER {} POR GETEAT Y VOY A ESPERAR".format(miner))
+            logging.info("[HEARING MINER {}] Waiting to get outcome".format(miner))
             self.barrier.wait()
             outcome_data = self.outcome_queues[miner].get()
             outcome = json.loads(outcome_data)
             if bool(outcome['success']):
-                logging.info("I succeded in mining {} with hash: {}".format(
+                logging.info("[MINER {}] Succeded mining with hash: {}".format(
                     miner, outcome["hash"]))
                 self.last_hash = outcome["hash"]
                 self.stopOtherMiners(miner)
             else:
-                logging.info("Failed in mining")
+                logging.info("[MINER {}] Failed mining".format(miner))
 
     def send(self):
-        logging.info("SOY EL MINERS HANDLER POR MANDAR Y VOY A ESPERAR")
+        logging.info("[MINERS HANDLER] Waiting to send")
         self.barrier.wait()
         self.sendBlock(self.block.serialize())
         self.block = self.createEmptyBlock()

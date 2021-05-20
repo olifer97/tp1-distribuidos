@@ -10,7 +10,6 @@ class Socket:
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)       
 
     def send_with_size(self, data, encode=True):
-        logging.info("VOY A MANDARR con size!!!!!!")
         self._send(self.socket, number_to_8_bytes(len(data)))
         data_to_send = data
         if encode:
@@ -18,7 +17,6 @@ class Socket:
         self._send(self.socket, data_to_send)
 
     def recv_with_size(self, decode = True):
-        logging.info("RECIBO CON SIZEEE!!!!")
         size = bytes_8_to_number(self._recv(self.socket, NUMBER_SIZE))
         data = self._recv(self.socket, size)
         if decode:

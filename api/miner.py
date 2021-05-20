@@ -8,8 +8,6 @@ from utils import *
 from block import Block
 from client_socket import ClientSocket
 
-WRITER_REPONSE_SIZE = 1
-
 class Miner(mp.Process):
     def __init__(self, queue_blocks, stop_mining_queue, outcome_queue, writer_address):
       mp.Process.__init__(self)
@@ -33,7 +31,6 @@ class Miner(mp.Process):
       timestamp = datetime.datetime.now()
       block.setTimestamp(timestamp)
       while self.stop_mining_queue.empty() and not self.meetsCondition(block):
-          info.logging("tratando de encontrar el hash")
           block.addNonce()
           block.setTimestamp(datetime.datetime.now())
 
@@ -45,8 +42,13 @@ class Miner(mp.Process):
         outcome = self.sendToBlockchain(data, block_hash)
       else:
         logging.info("I should stop mining")
-        self.stop_mining_queue.get_nowait()
+        
         outcome = {"success": False}
+
+      if not self.stop_mining_queue.empty():
+        self.stop_mining_queue.get_nowait()
+
+      logging.info("Outcome is: {}".format(outcome))
 
       return self.outcome_queue.put(json.dumps(outcome))
         
