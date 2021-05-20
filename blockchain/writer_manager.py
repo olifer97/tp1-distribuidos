@@ -7,23 +7,18 @@ import socket
 import os
 import queue
 
-from utils_sock import *
+from utils import *
 from block import Block
 from constants import *
 from writer import Writer
+from server_socket import ServerSocket
 
 class WriterManager(threading.Thread):
     def __init__(self, host, port):
       threading.Thread.__init__(self)
-      # Create a TCP/IP socket
-      self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-      self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 
-      # Bind the socket to the port
-      self.sock.bind((host, port))
+      self.socket = ServerSocket(host, port, 1)
 
-      # Listen for incoming connections
-      self.sock.listen(1)
       self.last_hash = None
       self.blocks_queue = queue.Queue()
       self.writer = Writer(self.blocks_queue)
@@ -32,9 +27,9 @@ class WriterManager(threading.Thread):
     def run(self):
       while True:
         # leer del socket y escribir en el archivo
-        connection, client_address = self.sock.accept()
+        client = self.socket.accept()
 
-        block_data = json.loads(recv_and_cut(connection, MAX_BLOCK_SIZE))
+        block_data = self.socket.recv_from(client)
 
         if self.last_hash != block_data['info']['header']['prev_hash']:
           result = False
@@ -44,6 +39,7 @@ class WriterManager(threading.Thread):
           result = True
           self.blocks_queue.put(block_data)
         #intentar guardar en los archivos
-        send(connection, ACK_SCHEME.pack(result)) #mando si fue bien o no
-        close(connection)
-      close(self.sock)
+
+        self.socket.send_to(client, ACK_SCHEME.pack(result), encode=False)
+        client.close()
+      self.socket.close()

@@ -4,8 +4,9 @@ import multiprocessing as mp
 import time
 import json
 import logging
-from utils_sock import *
+from utils import *
 from block import Block
+from client_socket import ClientSocket
 
 WRITER_REPONSE_SIZE = 1
 
@@ -20,6 +21,14 @@ class Miner(mp.Process):
     def meetsCondition(self, block):
       return block.hash() < (2**256) / block.difficulty()
 
+    def sendToBlockchain(self, block, block_hash):
+      self.sock = ClientSocket(address = self.writer_address)
+      self.sock.send_with_size(block)
+
+      blockchain_response = ACK_SCHEME.unpack(self.sock.recv_with_size(decode=False))[0]
+
+      return {"success": blockchain_response, "hash": block_hash}
+
     def mine(self, block):
       timestamp = datetime.datetime.now()
       block.setTimestamp(timestamp)
@@ -33,11 +42,7 @@ class Miner(mp.Process):
 
         data = json.dumps({"hash": block_hash, "info": block.asDict()})
 
-        self.sock = connect_send(data, self.writer_address)
-
-        blockchain_response = ACK_SCHEME.unpack(recv_and_cut(self.sock, WRITER_REPONSE_SIZE, decode=False))[0]
-
-        outcome = {"success": blockchain_response, "hash": block_hash}
+        outcome = self.sendToBlockchain(data, block_hash)
       else:
         logging.info("I should stop mining")
         self.stop_mining_queue.get_nowait()

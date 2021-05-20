@@ -3,7 +3,7 @@ import queue
 import datetime
 from miner import Miner
 from block import Block
-from utils_sock import *
+from utils import *
 import json
 import logging
 import os

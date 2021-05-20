@@ -6,7 +6,7 @@ import socket
 import os
 import queue
 
-from utils_sock import *
+from utils import *
 from block import Block
 from constants import *
 from reader import Reader

@@ -5,7 +5,7 @@ import json
 import socket
 import os
 
-from utils_sock import *
+from utils import *
 from block import Block
 from constants import *
 

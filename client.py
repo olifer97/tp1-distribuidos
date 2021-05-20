@@ -3,7 +3,7 @@ import json
 import socket
 import sys, getopt
 
-from common.utils_sock import *
+from common.utils import *
 from common.constants import *
 
 BLOCKCHAIN_ADDRESS = ('127.0.0.1', 5000)
