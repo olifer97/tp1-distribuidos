@@ -18,29 +18,6 @@ def bytes_8_to_number(b):
             return res
     return res
 
-def create_and_connect_client_socket(server_address):
-  # Create a TCP/IP socket
-  sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-
-  # Connect the socket to the port where the server is listening
-  try:
-    sock.connect(server_address)
-    return sock
-  except:
-    sock.close()
-    return None
-
-def connect_send(data, address):
-  sock = create_and_connect_client_socket(address)
-  send(sock, str.encode(data, 'utf-8'))
-  return sock
-
-def recv_and_cut(sock, size, decode = True):
-  data = sock.recv(size).rstrip()
-  if decode:
-    return data.decode()
-  return data
-
 def send(sock, data):
   try:
     sock.sendall(data)

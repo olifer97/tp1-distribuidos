@@ -65,7 +65,6 @@ class RequestHandler:
         """
         try:
             req = client_sock.recv_with_size()
-            #req = json.loads(recv_and_cut(client_sock, REQUEST_SIZE))
             logging.info('Request received from connection: {}'.format(req))
 
             op = req['type']
