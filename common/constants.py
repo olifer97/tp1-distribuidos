@@ -1,3 +1,5 @@
+import struct
+
 TIMESTAMP_FORMAT = "%m-%d-%Y, %H:%M:%S"
 
 MAX_ENTRIES = 256
@@ -15,3 +17,5 @@ GET_STATS = "GET_STATS"
 GET_BLOCK = "GET_BLOCK"
 
 GET_BLOCKS = "GET_BLOCKS"
+
+ACK_SCHEME = struct.Struct('?')

@@ -1,10 +1,6 @@
 import socket
-import struct
 
 NUMBER_SIZE = 8
-CHUNK_SIZE = 1024
-
-ACK_SCHEME = struct.Struct('?')
 
 def number_to_8_bytes(num):
     result = bytearray()

@@ -6,11 +6,10 @@ import socket
 import os
 import queue
 
-from utils import *
 from block import Block
 from constants import *
 from reader import Reader
-from server_socket import ServerSocket
+from custom_socket.server_socket import ServerSocket
 
 class ReaderManager(threading.Thread):
     def __init__(self, host, port, n_readers):

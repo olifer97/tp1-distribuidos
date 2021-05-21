@@ -5,8 +5,8 @@ import sys
 import getopt
 import queue
 
-from common.utils import *
 from common.constants import *
+from common.custom_socket.client_socket import ClientSocket
 
 BLOCKCHAIN_ADDRESS = ('127.0.0.1', 5000)
 RESPONSE_SIZE = 1024
@@ -17,8 +17,11 @@ stop_threads = False
 
 
 def send_and_recv(request, address):
-    sock = connect_send(json.dumps(request), address)
-    return recv_and_cut(sock, RESPONSE_SIZE)
+    sock = ClientSocket(address = address)
+    sock.send_with_size(json.dumps(request))
+    response = sock.recv_with_size()
+    sock.close()
+    return response 
 
 
 class Client(threading.Thread):

@@ -1,9 +1,6 @@
-import socket
 import logging
-import json
-from utils import *
-from constants import *
-from base_socket import Socket
+import socket
+from .base_socket import Socket
 
 class ClientSocket(Socket):
     def __init__(self, address = None, connection = None):

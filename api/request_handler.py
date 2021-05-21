@@ -4,8 +4,8 @@ import json
 import threading
 import datetime
 import queue
-from utils import *
 from constants import *
+from custom_socket.server_socket import ServerSocket
 
 '''
 Request format
@@ -24,10 +24,8 @@ GET_BLOCKS -> Get blocks in a minute interval. Parameter: timestamp in "%m-%d-%Y
 
 class RequestHandler:
     def __init__(self, port, listen_backlog, chunks_queue, query_queue, response_queue, n_workers):
-        # Initialize server socket
-        self._server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self._server_socket.bind(('', port))
-        self._server_socket.listen(listen_backlog)
+
+        self.socket = ServerSocket('', port, listen_backlog)
         self.chunks_queue = chunks_queue
         self.query_queue = query_queue
         self.response_thread = threading.Thread(target=self.hearResponses)
@@ -37,15 +35,13 @@ class RequestHandler:
         self.requests_queue = queue.Queue()
 
         self.workers = [threading.Thread(target=self.hearClientRequests, args=(self.requests_queue,)) for i in range(n_workers)]
-
     
     def hearResponses(self):
         while True:
             response = self.response_queue.get()
-            response['socket'].send(str.encode(json.dumps(response['info']), 'utf-8'))
+            response['socket'].send_with_size(json.dumps(response['info']))
             response['socket'].close()
-            
-
+        
 
     def hearClientRequests(self, requests_queue):
         while True:
@@ -57,7 +53,7 @@ class RequestHandler:
             worker.start()
 
         while True:
-            client_sock = self.__accept_new_connection()
+            client_sock = self.socket.accept()
             self.requests_queue.put(client_sock)
 
     def __handle_client_connection(self, client_sock):
@@ -68,7 +64,8 @@ class RequestHandler:
         client socket will also be closed
         """
         try:
-            req = json.loads(recv_and_cut(client_sock, REQUEST_SIZE))
+            req = client_sock.recv_with_size()
+            #req = json.loads(recv_and_cut(client_sock, REQUEST_SIZE))
             logging.info('Request received from connection: {}'.format(req))
 
             op = req['type']
@@ -78,7 +75,7 @@ class RequestHandler:
                 logging.info('Received chunk: {}'.format(chunk))
                 self.chunks_queue.put(chunk, block=False)
                 msg = {'response': 'Chunk {} will be proccesed'.format(chunk)}
-                client_sock.send(json.dumps(msg).encode('utf-8'))
+                client_sock.send_with_size(json.dumps(msg))
                 client_sock.close()
             elif op == GET_STATS: #request stats
                 self.query_queue.put({"socket": client_sock, "query": {"type": "st"}})
@@ -95,33 +92,16 @@ class RequestHandler:
             else:
                 logging.info("Unknown operation")
                 msg = {'response': 'Unknown operation: {}'.format(op)}
-                client_sock.send(json.dumps(msg).encode('utf-8'))
+                client_sock.send_with_size(json.dumps(msg))
                 client_sock.close()
         except queue.Full:
             logging.info("Queue full")
             msg = {'response': 'System overload try sending chunk later'}
-            client_sock.send(json.dumps(msg).encode('utf-8'))
+            client_sock.send_with_size(json.dumps(msg))
             client_sock.close()
         except Exception as e:
             logging.info("Error with request")
             logging.info(e)
             msg = {'response': 'System overload try sending chunk later'}
-            client_sock.send(json.dumps(msg).encode('utf-8'))
+            client_sock.send_with_size(json.dumps(msg))
             client_sock.close()
-
-
-
-
-    def __accept_new_connection(self):
-        """
-        Accept new connections
-
-        Function blocks until a connection to a client is made.
-        Then connection created is printed and returned
-        """
-
-        # Connection arrived
-        logging.info("Proceed to accept new connections")
-        c, addr = self._server_socket.accept()
-        logging.info('Got connection from {}'.format(addr))
-        return c

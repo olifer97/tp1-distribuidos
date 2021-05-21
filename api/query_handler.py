@@ -3,11 +3,10 @@ import queue
 import datetime
 from miner import Miner
 from block import Block
-from utils import *
 import json
 import logging
 import os
-from client_socket import ClientSocket
+from custom_socket.client_socket import ClientSocket
 
 STATS_FILE = "stats.json"
 

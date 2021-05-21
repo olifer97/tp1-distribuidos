@@ -7,11 +7,10 @@ import socket
 import os
 import queue
 
-from utils import *
 from block import Block
 from constants import *
 from writer import Writer
-from server_socket import ServerSocket
+from custom_socket.server_socket import ServerSocket
 
 class WriterManager(threading.Thread):
     def __init__(self, host, port):

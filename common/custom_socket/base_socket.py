@@ -1,8 +1,7 @@
 import socket
 import logging
 import json
-from utils import *
-from constants import *
+from .utils import *
 
 class Socket:
     def __init__(self):

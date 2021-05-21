@@ -4,9 +4,9 @@ import multiprocessing as mp
 import time
 import json
 import logging
-from utils import *
 from block import Block
-from client_socket import ClientSocket
+from constants import *
+from custom_socket.client_socket import ClientSocket
 
 class Miner(mp.Process):
     def __init__(self, queue_blocks, stop_mining_queue, outcome_queue, writer_address):

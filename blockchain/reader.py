@@ -2,13 +2,10 @@ import datetime
 import threading
 import time
 import json
-import socket
 import os
 
-from utils import *
 from block import Block
 from constants import *
-
 
 class Reader(threading.Thread):
     def __init__(self, request_queue, response_queue):
