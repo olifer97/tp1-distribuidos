@@ -63,9 +63,9 @@ class MinersHandler(Thread):
         for i in range(self.n_miners):
             if i != succedeedMiner:
                 self.stop_mining_queues[i].put(True)
-                self.stats_queue.put({"miner": i, "failed": True})
+                self.stats_queue.put({"miner": i, "status": 'failed'})
             else:
-                self.stats_queue.put({"miner": i, "success": True})
+                self.stats_queue.put({"miner": i, "status": 'success'})
 
     def startMiners(self):
         for i in range(self.n_miners):

@@ -41,12 +41,9 @@ class QueryHandler(threading.Thread):
         while True:
             stats_data = self.stats_queue.get()
             logging.info("Stats update {}".format(stats_data))
-            if 'success' in stats_data:
-                self.miner_stats[stats_data["miner"]] = self.miner_stats.get(stats_data["miner"], { 'success': 0})
-                self.miner_stats[stats_data["miner"]]['success'] += 1
-            elif 'failed' in stats_data:
-                self.miner_stats[stats_data["miner"]] = self.miner_stats.get(stats_data["miner"], { 'failed': 0})
-                self.miner_stats[stats_data["miner"]]['failed'] += 1
+
+            self.miner_stats[stats_data["miner"]] = self.miner_stats.get(stats_data["miner"], {stats_data['status']: 0})
+            self.miner_stats[stats_data["miner"]][stats_data['status']] += 1
             self.writeStats()
 
     def queryBlockchain(self, query_info): # TODO agregar mas threads
