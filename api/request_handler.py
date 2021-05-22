@@ -81,7 +81,12 @@ class RequestHandler:
                 logging.info('Query Stats')
             elif op == GET_BLOCK: #request block by hash
                 hash = req['parameter']
-                self.query_queue.put({"socket": client_sock, "query": {"type": "gh", "hash": hash}})
+                if not hash.isdigit():
+                    msg = {'response': 'Hash must be all digits'}
+                    client_sock.send_with_size(json.dumps(msg))
+                    client_sock.close()
+                else:
+                    self.query_queue.put({"socket": client_sock, "query": {"type": "gh", "hash": hash}})
                 logging.info('Query Block by hash: {}'.format(hash))
             elif op == GET_BLOCKS: #request blocks in a minute
                 string_timestamp = req['parameter']
@@ -101,6 +106,6 @@ class RequestHandler:
         except Exception as e:
             logging.info("Error with request")
             logging.info(e)
-            msg = {'response': 'System overload try sending chunk later'}
+            msg = {'response': 'Error with request'}
             client_sock.send_with_size(json.dumps(msg))
             client_sock.close()
