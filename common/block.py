@@ -6,12 +6,12 @@ from constants import *
 
 
 class Block:
-    def __init__(self, prev_hash, difficulty, chunks=[]):
+    def __init__(self, difficulty, chunks=[]):
         if len(chunks) > MAX_ENTRIES:
             raise "Exceeded amout of entries"
         self.chunks = chunks
         self.header = {
-            "prev_hash": prev_hash,
+            "prev_hash": None,
             "difficulty": difficulty,
             "nonce": 0,
             "entries_amount": len(chunks),
@@ -34,6 +34,9 @@ class Block:
 
     def setTimestamp(self, timestamp):
         self.header["timestamp"] = timestamp
+
+    def setPrevHash(self, hash):
+        self.header["prev_hash"] = hash
 
     def addNonce(self):
         self.header["nonce"] += 1
@@ -58,8 +61,8 @@ class Block:
     @classmethod
     def deserialize(cls, data):
         json_data = json.loads(data)
-        block = cls(json_data["header"]["prev_hash"],
-                    json_data["header"]["difficulty"], json_data["chunks"])
+        block = cls(json_data["header"]["difficulty"], json_data["chunks"])
+        block.header["prev_hash"] = json_data["header"]["prev_hash"]
         block.header["nonce"] = json_data["header"]["nonce"]
         block.header["timestamp"] = datetime.datetime.strptime(json_data["header"]["timestamp"], TIMESTAMP_FORMAT)
 

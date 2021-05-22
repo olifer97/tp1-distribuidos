@@ -6,6 +6,7 @@ import os
 
 from block import Block
 from constants import *
+from filelock import FileLock
 
 class Reader(threading.Thread):
     def __init__(self, request_queue, response_queue):
@@ -18,8 +19,11 @@ class Reader(threading.Thread):
         filename = "{}.json".format(hash)
         if not os.path.exists(filename): 
             return {"response": "Block not found"}
-        with open(filename) as f:
-          return json.load(f)
+        filelock = FileLock()
+        f = filelock.acquire_readonly(filename)
+        block = json.load(f)
+        filelock.release(f)
+        return block
 
     def getBlocksInMinute(self, min_timestamp):
         response = []
@@ -31,14 +35,15 @@ class Reader(threading.Thread):
 
         max_timetamp = min_timestamp + datetime.timedelta(minutes=1)
 
-        with open(filename) as f:
-            data = json.load(f)
-            for entry in data["entries"]:
+        filelock = FileLock()
+        f = filelock.acquire_readonly(filename)
+        data = json.load(f)
+        filelock.release(f)
+        for entry in data["entries"]:
                 timestamp = datetime.datetime.strptime(entry['timestamp'], TIMESTAMP_FORMAT)
                 if timestamp >= min_timestamp and timestamp <= max_timetamp:
                     block_hash = entry['hash']
                     response.append(self.getBlock(block_hash))
-
         return response
 
     def run(self):

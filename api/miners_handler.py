@@ -4,6 +4,7 @@ import queue
 import datetime
 from miner import Miner
 from block import Block
+from shared_value import SharedValue
 import json
 import logging
 import time
@@ -25,7 +26,7 @@ class MinersHandler(Thread):
                              self.outcome_queues[i], writer_address) for i in range(n_miners)]
         self.hearing_miners = [Thread(
             target=self.hearOutcomeFromMiner, args=(i,)) for i in range(n_miners)]
-        self.last_hash = None
+        self.last_hash = SharedValue()
         self.difficulty = 1
         self.proccesedBlocks = 0
         self.startTime = datetime.datetime.now()
@@ -45,7 +46,7 @@ class MinersHandler(Thread):
 
     def createEmptyBlock(self):
         self.checkProccesedBlock()
-        newBlock = Block(self.last_hash, self.difficulty, [])
+        newBlock = Block(self.difficulty, [])
         newBlock.setTimestamp(datetime.datetime.now())
         return newBlock
 
@@ -83,16 +84,18 @@ class MinersHandler(Thread):
             outcome_data = self.outcome_queues[miner].get()
             outcome = json.loads(outcome_data)
             if bool(outcome['success']):
-                logging.info("[MINER {}] Succeded mining with hash: {}".format(
+                logging.info("[HEARING MINER {}] Succeded mining with hash: {}".format(
                     miner, outcome["hash"]))
-                self.last_hash = outcome["hash"]
+                logging.info("[HEARING MINER {}] Update last hash".format(miner))
+                self.last_hash.update(outcome["hash"])
                 self.stopOtherMiners(miner)
             else:
-                logging.info("[MINER {}] Failed mining".format(miner))
+                logging.info("[HEARING MINER {}] Failed mining".format(miner))
 
     def send(self):
         logging.info("[MINERS HANDLER] Waiting to send")
         self.barrier.wait()
+        self.block.setPrevHash(self.last_hash.read())
         self.sendBlock(self.block.serialize())
         self.block = self.createEmptyBlock()
 

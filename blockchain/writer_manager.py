@@ -31,6 +31,7 @@ class WriterManager(threading.Thread):
         block_data = self.socket.recv_from(client)
 
         if self.last_hash != block_data['info']['header']['prev_hash']:
+          logging.info("Wrong prev hash: {}".format(block_data['info']['header']['prev_hash']))
           result = False
         else:
           self.last_hash = block_data['hash']

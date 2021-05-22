@@ -4,9 +4,11 @@ import time
 import json
 import socket
 import os
+import logging
 
 from block import Block
 from constants import *
+from filelock import FileLock
 
 
 class Writer(threading.Thread):
@@ -21,15 +23,18 @@ class Writer(threading.Thread):
       filename = "{}.json".format(timestamp.strftime(TIMESTAMP_FORMAT))
       entry = { "timestamp": block_data['info']['header']['timestamp'], "hash": block_data['hash']}
       if not os.path.exists(filename):
-        with open(filename, 'w') as f:
-          json.dump({"entries": [entry]}, f)
+        filelock = FileLock()
+        f = filelock.acquire_writeonly(filename)
+        json.dump({"entries": [entry]}, f)
+        filelock.release(f)
       else:
-        with open(filename, "r+") as index:
-          data = json.load(index)
-          data["entries"].append(entry)
-          index.seek(0)
-          json.dump(data, index)
-          
+        filelock = FileLock()
+        f = filelock.acquire_writeonly(filename, type='r+')
+        data = json.load(f)
+        data["entries"].append(entry)
+        f.seek(0)
+        json.dump(data, f)
+        filelock.release(f) 
         
 
       with open('{}.json'.format(block_data['hash']), 'w') as f:
