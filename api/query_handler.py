@@ -13,8 +13,9 @@ STATS_FILE = "stats.json"
 QUERY_RESPONSE_SIZE = 1024
 
 class QueryHandler(threading.Thread):
-    def __init__(self, n_miners, query_queue, stats_queue, response_queue, writer_address, reader_address):
+    def __init__(self, n_miners, query_queue, stats_queue, response_queue, writer_address, reader_address, stop_event):
         threading.Thread.__init__(self)
+        self.stop_event = stop_event
         self.query_queue = query_queue
         self.response_queue = response_queue
         self.reader_address = reader_address

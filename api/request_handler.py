@@ -23,8 +23,8 @@ GET_BLOCKS -> Get blocks in a minute interval. Parameter: timestamp in "%m-%d-%Y
 '''
 
 class RequestHandler:
-    def __init__(self, port, listen_backlog, chunks_queue, query_queue, response_queue, n_workers):
-
+    def __init__(self, port, listen_backlog, chunks_queue, query_queue, response_queue, n_workers, stop_event):
+        self.stop_event = stop_event
         self.socket = ServerSocket('', port, listen_backlog)
         self.chunks_queue = chunks_queue
         self.query_queue = query_queue
@@ -41,23 +41,42 @@ class RequestHandler:
         socket.close()
     
     def _hear_responses(self):
-        while True:
-            response = self.response_queue.get()
-            self._send_and_close(response['socket'], response['info'])
+        while not self.stop_event.is_set():
+            try:
+                response = self.response_queue.get(timeout=TIMEOUT_WAITING_MESSAGE)
+                self.response_queue.task_done()
+                self._send_and_close(response['socket'], response['info'])
+            except queue.Empty:
+                if self.stop_event.is_set():
+                    break
         
 
     def _hear_client_requests(self, requests_queue):
-        while True:
-            client_sock = self.requests_queue.get()
-            self._handle_client_connection(client_sock)
+        logging.info("[WORKER] Starts")
+        while not self.stop_event.is_set():
+            try:
+                client_sock = self.requests_queue.get(timeout=TIMEOUT_WAITING_MESSAGE)
+                self.requests_queue.task_done()
+                self._handle_client_connection(client_sock)
+            except queue.Empty:
+                if self.stop_event.is_set():
+                    logging.info("[WORKER] Finishes")
+                    break
 
     def run(self):
-        for worker in self.workers:
-            worker.start()
+        try:
+            for worker in self.workers:
+                worker.start()
 
-        while True:
-            client_sock = self.socket.accept()
-            self.requests_queue.put(client_sock)
+            logging.info("[REQUEST HANDLER] Starts")
+            while not self.stop_event.is_set():
+                client_sock = self.socket.accept()
+                if client_sock == None:
+                    continue
+                self.requests_queue.put(client_sock)
+        except SystemExit:
+            self.requests_queue.join()
+            self.stop_event.set()
 
     def _handle_client_connection(self, client_sock):
         """

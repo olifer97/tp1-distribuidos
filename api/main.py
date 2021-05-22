@@ -9,6 +9,13 @@ import logging
 
 import sys
 import os
+import signal
+import threading
+
+def handle_exit(sig, frame):
+    raise(SystemExit)
+
+signal.signal(signal.SIGTERM, handle_exit)
 
 
 def parse_config_params():
@@ -47,18 +54,22 @@ def main():
     query_queue = queue.Queue()
     stats_queue = queue.Queue()
     response_queue = queue.Queue()
+    stop_event = threading.Event()
 
     miners_handler = MinersHandler(config['n_miners'], chunks_queue, stats_queue, (
-        config['blockchain_host'], config['writer_port']))
+        config['blockchain_host'], config['writer_port']), stop_event)
     miners_handler.start()
 
     query_handler = QueryHandler(config['n_miners'], query_queue, stats_queue, response_queue, (
-        config['blockchain_host'], config['writer_port']), (config['blockchain_host'], config['reader_port']))
+        config['blockchain_host'], config['writer_port']), (config['blockchain_host'], config['reader_port']), stop_event)
     query_handler.start()
 
     request_handler = RequestHandler(
-        config['api_port'], config['listen_backlog'], chunks_queue, query_queue, response_queue, config['n_workers'])
+        config['api_port'], config['listen_backlog'], chunks_queue, query_queue, response_queue, config['n_workers'], stop_event)
     request_handler.run()
+    miners_handler.join()
+    query_handler.join()
+
 
 
 if __name__ == "__main__":

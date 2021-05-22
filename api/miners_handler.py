@@ -14,8 +14,9 @@ DIFFICULTY_MINED_BLOCKS = 256
 SECONDS_WAITING_CHUNK = 10
 
 class MinersHandler(Thread):
-    def __init__(self, n_miners, chunks_queue, stats_queue, writer_address):
+    def __init__(self, n_miners, chunks_queue, stats_queue, writer_address, stop_event):
         Thread.__init__(self)
+        self.stop_event = stop_event
         self.chunks_queue = chunks_queue
         self.stats_queue = stats_queue
         self.blocks_queues = [mp.Queue() for i in range(n_miners)]
@@ -54,6 +55,10 @@ class MinersHandler(Thread):
         for queue in self.blocks_queues:
             queue.put(block)
 
+    def _join_blocks_queues(self, block):
+        for queue in self.blocks_queues:
+            queue.join()
+
     def _stop_other_miners(self, succedeedMiner):
         for i in range(self.n_miners):
             if i != succedeedMiner:
@@ -90,14 +95,19 @@ class MinersHandler(Thread):
         self.block = self._create_empty_block()
 
     def run(self):
-        while True:
+        logging.info("[MINERS HANDLER] Starts")
+        while not self.stop_event.is_set():
             try:
                 chunk = self.chunks_queue.get(timeout=SECONDS_WAITING_CHUNK)
+                self.chunks_queue.task_done()
                 self.block.addChunk(chunk)
                 if self.block.isFull():
                     self.send()
             except queue.Empty:
                 if not self.block.isEmpty():
                     self.send()
+        logging.info("[MINERS HANDLER] Starts finishing")
+        self._join_blocks_queues()
+        logging.info("[MINERS HANDLER] Finished")
 
             

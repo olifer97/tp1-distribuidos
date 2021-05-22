@@ -1,8 +1,16 @@
 import logging
 import sys
 import os
+import signal
+import threading
+
 from writer_manager import WriterManager
 from reader_manager import ReaderManager
+
+def handle_exit(sig, frame):
+    raise(SystemExit)
+
+signal.signal(signal.SIGTERM, handle_exit)
 
 def parse_config_params():
     """ Parse env variables to find program config params
@@ -29,12 +37,19 @@ def parse_config_params():
     return config_params
 
 def main():
-    config = parse_config_params()
-    writer = WriterManager(config['blockchain_host'], config['writer_port'])
-    writer.start()
+    try:
+        stop_event = threading.Event() # used to signal termination to the threads
+        config = parse_config_params()
+        writer = WriterManager(config['blockchain_host'], config['writer_port'], stop_event)
+        writer.start()
 
-    readers = ReaderManager(config['blockchain_host'], config['reader_port'], config['n_readers'])
-    readers.start()
+        readers = ReaderManager(config['blockchain_host'], config['reader_port'], config['n_readers'], stop_event)
+        readers.start() 
+        writer.join()
+        readers.join()
+    except SystemExit:
+        stop_event.set()
+
 
 
 if __name__ == "__main__":
