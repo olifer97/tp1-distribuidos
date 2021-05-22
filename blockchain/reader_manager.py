@@ -20,15 +20,15 @@ class ReaderManager(threading.Thread):
       self.request_queue = queue.Queue()
       self.response_queue = queue.Queue() 
       self.readers = [Reader(self.request_queue, self.response_queue) for i in range(n_readers)]
-      self.hearing_readers = threading.Thread(target=self.hearResponses)
-      self.startReaders()
+      self.hearing_readers = threading.Thread(target=self._hear_responses)
+      self._start_readers()
       self.hearing_readers.start()
 
-    def startReaders(self):
+    def _start_readers(self):
         for i in range(self.n_readers):
             self.readers[i].start()
 
-    def hearResponses(self):
+    def _hear_responses(self):
         while True:
             response = self.response_queue.get()
             response["socket"].send_with_size(json.dumps(response["response"]))

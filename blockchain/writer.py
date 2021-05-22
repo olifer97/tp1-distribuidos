@@ -16,7 +16,7 @@ class Writer(threading.Thread):
       threading.Thread.__init__(self)
       self.queue_blocks = queue_blocks
 
-    def saveBlock(self, block_data):
+    def _save_block(self, block_data):
       timestamp = datetime.datetime.strptime(block_data['info']['header']['timestamp'], TIMESTAMP_FORMAT).replace(minute= 0, second=0, microsecond=0)
       timestamp_without_seconds = timestamp.strftime(TIMESTAMP_FORMAT)
 
@@ -43,4 +43,4 @@ class Writer(threading.Thread):
     def run(self):
       while True:
         block_data = self.queue_blocks.get()
-        self.saveBlock(block_data)
+        self._save_block(block_data)

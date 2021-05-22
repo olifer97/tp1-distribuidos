@@ -25,17 +25,17 @@ class MinersHandler(Thread):
         self.miners = [Miner(self.blocks_queues[i], self.stop_mining_queues[i],
                              self.outcome_queues[i], writer_address) for i in range(n_miners)]
         self.hearing_miners = [Thread(
-            target=self.hearOutcomeFromMiner, args=(i,)) for i in range(n_miners)]
+            target=self._hear_outcome_from_miner, args=(i,)) for i in range(n_miners)]
         self.last_hash = SharedValue()
         self.difficulty = 1
         self.proccesedBlocks = 0
         self.startTime = datetime.datetime.now()
-        self.block = self.createEmptyBlock()
+        self.block = self._create_empty_block()
         self.barrier = Barrier(n_miners + 1)
-        self.startMiners()
+        self._start_miners()
         
 
-    def checkProccesedBlock(self):
+    def _check_proccesed_block(self):
         self.proccesedBlocks += 1
         if self.proccesedBlocks >= DIFFICULTY_MINED_BLOCKS:
             elapsedTime = (datetime.datetime.now() -
@@ -44,22 +44,17 @@ class MinersHandler(Thread):
             self.proccesedBlocks = 0
             self.startTime = datetime.datetime.now()
 
-    def createEmptyBlock(self):
-        self.checkProccesedBlock()
+    def _create_empty_block(self):
+        self._check_proccesed_block()
         newBlock = Block(self.difficulty, [])
         newBlock.setTimestamp(datetime.datetime.now())
         return newBlock
 
-    def sendBlock(self, block): # TODO: Agregar fairnes
-        #random.shuffle(self.blocks_queues)
+    def _send_block(self, block):
         for queue in self.blocks_queues:
             queue.put(block)
 
-    def waitQueues(self):
-        for queue in self.blocks_queues:
-            queue.join()
-
-    def stopOtherMiners(self, succedeedMiner):
+    def _stop_other_miners(self, succedeedMiner):
         for i in range(self.n_miners):
             if i != succedeedMiner:
                 self.stop_mining_queues[i].put(True)
@@ -67,17 +62,12 @@ class MinersHandler(Thread):
             else:
                 self.stats_queue.put({"miner": i, "status": 'success'})
 
-    def startMiners(self):
+    def _start_miners(self):
         for i in range(self.n_miners):
             self.miners[i].start()
             self.hearing_miners[i].start()
 
-    def join(self):
-        for i in range(self.n_miners):
-            self.miners[i].join()
-            self.hearing_miners[i].join()
-
-    def hearOutcomeFromMiner(self, miner):
+    def _hear_outcome_from_miner(self, miner):
         while True:
             logging.info("[HEARING MINER {}] Waiting to get outcome".format(miner))
             self.barrier.wait()
@@ -88,7 +78,7 @@ class MinersHandler(Thread):
                     miner, outcome["hash"]))
                 logging.info("[HEARING MINER {}] Update last hash".format(miner))
                 self.last_hash.update(outcome["hash"])
-                self.stopOtherMiners(miner)
+                self._stop_other_miners(miner)
             else:
                 logging.info("[HEARING MINER {}] Failed mining".format(miner))
 
@@ -96,8 +86,8 @@ class MinersHandler(Thread):
         logging.info("[MINERS HANDLER] Waiting to send")
         self.barrier.wait()
         self.block.setPrevHash(self.last_hash.read())
-        self.sendBlock(self.block.serialize())
-        self.block = self.createEmptyBlock()
+        self._send_block(self.block.serialize())
+        self.block = self._create_empty_block()
 
     def run(self):
         while True:

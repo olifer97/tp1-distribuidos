@@ -14,7 +14,6 @@ OPTIONS = 'client.py [--clients <number>] [--size <number>] [--requests <number>
 
 stop_threads = False
 
-
 def send_and_recv(request, address):
     sock = ClientSocket(address = address)
     sock.send_with_size(json.dumps(request))

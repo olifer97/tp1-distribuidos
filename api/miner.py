@@ -16,10 +16,10 @@ class Miner(mp.Process):
       self.outcome_queue = outcome_queue
       self.writer_address = writer_address
 
-    def meetsCondition(self, block):
+    def _meets_condition(self, block):
       return block.hash() < (2**256) / block.difficulty()
 
-    def sendToBlockchain(self, block, block_hash):
+    def _send_to_blockchain(self, block, block_hash):
       self.sock = ClientSocket(address = self.writer_address)
       self.sock.send_with_size(block)
 
@@ -30,7 +30,7 @@ class Miner(mp.Process):
     def mine(self, block):
       timestamp = datetime.datetime.now()
       block.setTimestamp(timestamp)
-      while self.stop_mining_queue.empty() and not self.meetsCondition(block):
+      while self.stop_mining_queue.empty() and not self._meets_condition(block):
           block.addNonce()
           block.setTimestamp(datetime.datetime.now())
 
@@ -39,7 +39,7 @@ class Miner(mp.Process):
 
         data = json.dumps({"hash": block_hash, "info": block.asDict()})
 
-        outcome = self.sendToBlockchain(data, block_hash)
+        outcome = self._send_to_blockchain(data, block_hash)
       else:
         logging.info("I should stop mining")
         

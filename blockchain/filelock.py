@@ -1,7 +1,6 @@
 import fcntl
 
 class FileLock:
-
     def acquire_readonly(self, filepath):
         lockfile = open(filepath, 'r')
         fcntl.lockf(lockfile, fcntl.LOCK_SH)

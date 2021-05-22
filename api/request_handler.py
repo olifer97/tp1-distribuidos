@@ -28,25 +28,28 @@ class RequestHandler:
         self.socket = ServerSocket('', port, listen_backlog)
         self.chunks_queue = chunks_queue
         self.query_queue = query_queue
-        self.response_thread = threading.Thread(target=self.hearResponses)
+        self.response_thread = threading.Thread(target=self._hear_responses)
         self.response_queue = response_queue
 
         self.response_thread.start()
         self.requests_queue = queue.Queue()
 
-        self.workers = [threading.Thread(target=self.hearClientRequests, args=(self.requests_queue,)) for i in range(n_workers)]
+        self.workers = [threading.Thread(target=self._hear_client_requests, args=(self.requests_queue,)) for i in range(n_workers)]
     
-    def hearResponses(self):
+    def _send_and_close(self, socket, response):
+        socket.send_with_size(json.dumps(response))
+        socket.close()
+    
+    def _hear_responses(self):
         while True:
             response = self.response_queue.get()
-            response['socket'].send_with_size(json.dumps(response['info']))
-            response['socket'].close()
+            self._send_and_close(response['socket'], response['info'])
         
 
-    def hearClientRequests(self, requests_queue):
+    def _hear_client_requests(self, requests_queue):
         while True:
             client_sock = self.requests_queue.get()
-            self.__handle_client_connection(client_sock)
+            self._handle_client_connection(client_sock)
 
     def run(self):
         for worker in self.workers:
@@ -56,7 +59,7 @@ class RequestHandler:
             client_sock = self.socket.accept()
             self.requests_queue.put(client_sock)
 
-    def __handle_client_connection(self, client_sock):
+    def _handle_client_connection(self, client_sock):
         """
         Read message from a specific client socket and closes the socket
 
@@ -74,8 +77,7 @@ class RequestHandler:
                 logging.info('Received chunk: {}'.format(chunk))
                 self.chunks_queue.put(chunk, block=False)
                 msg = {'response': 'Chunk {} will be proccesed'.format(chunk)}
-                client_sock.send_with_size(json.dumps(msg))
-                client_sock.close()
+                self._send_and_close(client_sock, msg)
             elif op == GET_STATS: #request stats
                 self.query_queue.put({"socket": client_sock, "query": {"type": "st"}})
                 logging.info('Query Stats')
@@ -83,8 +85,7 @@ class RequestHandler:
                 hash = req['parameter']
                 if not hash.isdigit():
                     msg = {'response': 'Hash must be all digits'}
-                    client_sock.send_with_size(json.dumps(msg))
-                    client_sock.close()
+                    self._send_and_close(client_sock, msg)
                 else:
                     self.query_queue.put({"socket": client_sock, "query": {"type": "gh", "hash": hash}})
                 logging.info('Query Block by hash: {}'.format(hash))
@@ -95,22 +96,18 @@ class RequestHandler:
                     self.query_queue.put({"socket": client_sock, "query": {"type": "gm", "timestamp": string_timestamp}})
                 except:
                     msg = {'response': 'Timestamp format incorrect. Expecting: {}'.format(TIMESTAMP_FORMAT)}
-                    client_sock.send_with_size(json.dumps(msg))
-                    client_sock.close()
+                    self._send_and_close(client_sock, msg)
                 logging.info('Request for blocks in minute: {}'.format(string_timestamp))
             else:
                 logging.info("Unknown operation")
                 msg = {'response': 'Unknown operation: {}'.format(op)}
-                client_sock.send_with_size(json.dumps(msg))
-                client_sock.close()
+                self._send_and_close(client_sock, msg)
         except queue.Full:
             logging.info("Queue full")
             msg = {'response': 'System overload try sending chunk later'}
-            client_sock.send_with_size(json.dumps(msg))
-            client_sock.close()
+            self._send_and_close(client_sock, msg)
         except Exception as e:
             logging.info("Error with request")
             logging.info(e)
             msg = {'response': 'Error with request'}
-            client_sock.send_with_size(json.dumps(msg))
-            client_sock.close()
+            self._send_and_close(client_sock, msg)

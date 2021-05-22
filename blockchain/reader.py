@@ -15,7 +15,7 @@ class Reader(threading.Thread):
       self.response_queue = response_queue
 
     
-    def getBlock(self, hash):
+    def _get_block(self, hash):
         filename = "{}.json".format(hash)
         if not os.path.exists(filename): 
             return {"response": "Block not found"}
@@ -25,7 +25,7 @@ class Reader(threading.Thread):
         filelock.release(f)
         return block
 
-    def getBlocksInMinute(self, min_timestamp):
+    def _get_blocks_in_minute(self, min_timestamp):
         response = []
         timestamp_only_hour = min_timestamp.replace(minute= 0, second=0, microsecond=0).strftime(TIMESTAMP_FORMAT)
         filename = "{}.json".format(timestamp_only_hour)
@@ -43,7 +43,7 @@ class Reader(threading.Thread):
                 timestamp = datetime.datetime.strptime(entry['timestamp'], TIMESTAMP_FORMAT)
                 if timestamp >= min_timestamp and timestamp <= max_timetamp:
                     block_hash = entry['hash']
-                    response.append(self.getBlock(block_hash))
+                    response.append(self._get_block(block_hash))
         return response
 
     def run(self):
@@ -51,12 +51,12 @@ class Reader(threading.Thread):
         request = self.request_queue.get()
 
         if request['request']['type'] == 'gh':
-            block = self.getBlock(request['request']['hash'])
+            block = self._get_block(request['request']['hash'])
             self.response_queue.put({'socket': request['socket'] , 'response': block})
 
         if request['request']['type'] == 'gm':
             timestamp = datetime.datetime.strptime(request['request']['timestamp'], TIMESTAMP_FORMAT)
-            blocks = self.getBlocksInMinute(timestamp)
+            blocks = self._get_blocks_in_minute(timestamp)
             self.response_queue.put({'socket': request['socket'], 'response': blocks})
         
         
