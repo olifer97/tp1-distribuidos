@@ -90,8 +90,13 @@ class RequestHandler:
                 logging.info('Query Block by hash: {}'.format(hash))
             elif op == GET_BLOCKS: #request blocks in a minute
                 string_timestamp = req['parameter']
-                timestamp = datetime.datetime.strptime(string_timestamp, TIMESTAMP_FORMAT)
-                self.query_queue.put({"socket": client_sock, "query": {"type": "gm", "timestamp": string_timestamp}})
+                try:
+                    datetime.datetime.strptime(string_timestamp, TIMESTAMP_FORMAT)
+                    self.query_queue.put({"socket": client_sock, "query": {"type": "gm", "timestamp": string_timestamp}})
+                except:
+                    msg = {'response': 'Timestamp format incorrect. Expecting: {}'.format(TIMESTAMP_FORMAT)}
+                    client_sock.send_with_size(json.dumps(msg))
+                    client_sock.close()
                 logging.info('Request for blocks in minute: {}'.format(string_timestamp))
             else:
                 logging.info("Unknown operation")
