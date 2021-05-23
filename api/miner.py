@@ -56,7 +56,6 @@ class Miner(mp.Process):
         
 
     def run(self):
-      logging.info("[MINER] Starts")
       while not self.stop.is_set():
         try:
           block_data = self.queue_blocks.get(timeout=TIMEOUT_WAITING_MESSAGE)
@@ -64,5 +63,5 @@ class Miner(mp.Process):
           self.mine(Block.deserialize(block_data))
         except queue.Empty:
           continue
-      logging.info("[MINER] Finishing")
       self.outcome_queue.close()
+      logging.info("[MINER] Finished")

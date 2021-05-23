@@ -73,7 +73,6 @@ def main():
         query_handler.join()
         request_handler.join()
     except SystemExit:
-        logging.info("[API] Starts finishing")
         stop_event.set()
             
 

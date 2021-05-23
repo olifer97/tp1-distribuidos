@@ -49,7 +49,6 @@ class Reader(threading.Thread):
         return response
 
     def run(self):
-      logging.info("[Reader] Starts")
       while not self.stop_event.is_set():
         try:
             request = self.request_queue.get(timeout=TIMEOUT_WAITING_MESSAGE)
@@ -65,7 +64,6 @@ class Reader(threading.Thread):
                 self.response_queue.put({'socket': request['socket'], 'response': blocks})
         except queue.Empty:
             if self.stop_event.is_set():
-                logging.info("[READER] Starts to finish")
                 self.response_queue.join()
                 logging.info("[READER] Finished")
                 break

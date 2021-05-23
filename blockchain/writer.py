@@ -43,7 +43,6 @@ class Writer(threading.Thread):
           json.dump(block_data['info'], f)
 
     def run(self):
-      logging.info("[WRITER] Starts")
       while not self.stop_event.is_set():
         try:
             block_data = self.queue_blocks.get(timeout=TIMEOUT_WAITING_MESSAGE)

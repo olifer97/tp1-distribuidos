@@ -46,7 +46,6 @@ class WriterManager(threading.Thread):
 
         self.socket.send_to(client, ACK_SCHEME.pack(result), encode=False)
         client.close()
-      logging.info("[WRITER MANAGER] Starts to finish")
       self.blocks_queue.join()
       self.stop_event.set()
       self.socket.close()

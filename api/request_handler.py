@@ -42,7 +42,6 @@ class RequestHandler(threading.Thread):
         socket.close()
     
     def _hear_responses(self):
-        logging.info("[RESPONDER] Starts")
         while not self.stop_event.is_set():
             try:
                 response = self.response_queue.get(timeout=TIMEOUT_WAITING_MESSAGE)
@@ -50,12 +49,11 @@ class RequestHandler(threading.Thread):
                 self._send_and_close(response['socket'], response['info'])
             except queue.Empty:
                 if self.stop_event.is_set():
-                    logging.info("[RESPONDER] Finishes")
+                    logging.info("[HEAR RESPONSES] Finished")
                     break
         
 
     def _hear_client_requests(self, requests_queue):
-        logging.info("[WORKER] Starts")
         while not self.stop_event.is_set():
             try:
                 client_sock = self.requests_queue.get(timeout=TIMEOUT_WAITING_MESSAGE)
@@ -63,14 +61,13 @@ class RequestHandler(threading.Thread):
                 self._handle_client_connection(client_sock)
             except queue.Empty:
                 if self.stop_event.is_set():
-                    logging.info("[WORKER] Finishes")
+                    logging.info("[WORKER] Finished")
                     break
 
     def run(self):
         for worker in self.workers:
             worker.start()
 
-        logging.info("[REQUEST HANDLER] Starts")
         while not self.stop_event.is_set():
             client_sock = self.socket.accept()
             if client_sock == None:
@@ -79,6 +76,7 @@ class RequestHandler(threading.Thread):
         self.requests_queue.join()
         self.query_queue.join()
         self.socket.close()
+        logging.info("[REQUEST HANDLER] Finished")
 
     def _handle_client_connection(self, client_sock):
         """

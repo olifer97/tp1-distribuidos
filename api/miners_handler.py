@@ -93,7 +93,6 @@ class MinersHandler(Thread):
     def _hear_outcome_from_miner(self, miner):
         while not self.stop_event.is_set():
             try:
-                logging.info("[HEARING MINER {}] Waiting to get outcome".format(miner))
                 try:
                     self.barrier.wait()
                 except BrokenBarrierError:
@@ -112,7 +111,6 @@ class MinersHandler(Thread):
             except (queue.Empty, ValueError):
                 if self.stop_event.is_set():
                     continue
-        logging.info("[HEARING MINER {}] Finishing".format(miner))
         self.barrier.reset()
         self.stop_mining_queues[miner].close()
         self.stats_queue.join()
@@ -128,7 +126,6 @@ class MinersHandler(Thread):
         return True
 
     def run(self):
-        logging.info("[MINERS HANDLER] Starts")
         while not self.stop_event.is_set():
             try:
                 chunk = self.chunks_queue.get(timeout=TIMEOUT_WAITING_MESSAGE)
@@ -141,7 +138,6 @@ class MinersHandler(Thread):
                 if not self.block.isEmpty():
                     if not self.send():
                         break
-        logging.info("[MINERS HANDLER] Starts finishing")
         self.stop_miners.set()
         self.barrier.reset()
         self._close_blocks_queues()

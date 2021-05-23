@@ -51,7 +51,7 @@ class QueryHandler(threading.Thread):
                 self._write_stats()
             except queue.Empty:
                 continue
-        logging.info("[HEAR STATS] Finishes")
+        logging.info("[HEAR STATS] Finished")
 
     def _query_blockchain(self, query_info): # TODO agregar mas threads
 
@@ -80,6 +80,6 @@ class QueryHandler(threading.Thread):
                 self.response_queue.put({"socket": request["socket"], "info": response})
             except queue.Empty:
                 continue
-        logging.info("[QUERY HANDLER] Finishes")
         self.response_queue.join()
         self.hearing_stats.join()
+        logging.info("[QUERY HANDLER] Finished")
