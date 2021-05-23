@@ -65,6 +65,7 @@ class Reader(threading.Thread):
                 self.response_queue.put({'socket': request['socket'], 'response': blocks})
         except queue.Empty:
             if self.stop_event.is_set():
+                logging.info("[READER] Starts to finish")
                 self.response_queue.join()
                 logging.info("[READER] Finished")
                 break

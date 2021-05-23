@@ -59,7 +59,7 @@ class ReaderManager(threading.Thread):
       logging.info("[READER MANAGER] Starts to finish")
       # stop data collection. Let the logging thread finish logging everything in the queue
       if not self.request_queue.empty(): self.request_queue.join()
-      #if not self.response_queue.empty(): self.response_queue.join()
+      if not self.response_queue.empty(): self.response_queue.join()
       self._join_readers()
       self.socket.close()
       logging.info("[READER MANAGER] Finished")

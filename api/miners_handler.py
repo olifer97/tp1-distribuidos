@@ -55,7 +55,7 @@ class MinersHandler(Thread):
         for queue in self.blocks_queues:
             queue.put(block)
 
-    def _join_blocks_queues(self, block):
+    def _join_blocks_queues(self):
         for queue in self.blocks_queues:
             queue.join()
 
