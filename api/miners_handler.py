@@ -12,7 +12,7 @@ import time
 import random
 
 DIFFICULTY_MINED_BLOCKS = 256
-SECONDS_WAITING_CHUNK = 10
+MAX_NUMBER_OF_RETRYS = 10
 
 class MinersHandler(Thread):
     def __init__(self, n_miners, chunks_queue, stats_queue, writer_address, stop_event):
@@ -126,6 +126,7 @@ class MinersHandler(Thread):
         return True
 
     def run(self):
+        number_of_retrys = 0
         while not self.stop_event.is_set():
             try:
                 chunk = self.chunks_queue.get(timeout=TIMEOUT_WAITING_MESSAGE)
@@ -135,9 +136,14 @@ class MinersHandler(Thread):
                     if not self.send():
                         break
             except queue.Empty:
-                if not self.block.isEmpty():
+                if not self.block.isEmpty() and number_of_retrys >= MAX_NUMBER_OF_RETRYS:
+                    number_of_retrys = 0
                     if not self.send():
                         break
+                elif self.block.isEmpty():
+                    number_of_retrys = 0
+                else:
+                    number_of_retrys += 1
         self.stop_miners.set()
         self.barrier.reset()
         self._close_blocks_queues()
