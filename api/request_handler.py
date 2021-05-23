@@ -22,8 +22,9 @@ GET_BLOCKS -> Get blocks in a minute interval. Parameter: timestamp in "%m-%d-%Y
 
 '''
 
-class RequestHandler:
+class RequestHandler(threading.Thread):
     def __init__(self, port, listen_backlog, chunks_queue, query_queue, response_queue, n_workers, stop_event):
+        threading.Thread.__init__(self)
         self.stop_event = stop_event
         self.socket = ServerSocket('', port, listen_backlog)
         self.chunks_queue = chunks_queue
@@ -41,6 +42,7 @@ class RequestHandler:
         socket.close()
     
     def _hear_responses(self):
+        logging.info("[RESPONDER] Starts")
         while not self.stop_event.is_set():
             try:
                 response = self.response_queue.get(timeout=TIMEOUT_WAITING_MESSAGE)
@@ -48,6 +50,7 @@ class RequestHandler:
                 self._send_and_close(response['socket'], response['info'])
             except queue.Empty:
                 if self.stop_event.is_set():
+                    logging.info("[RESPONDER] Finishes")
                     break
         
 
@@ -64,19 +67,18 @@ class RequestHandler:
                     break
 
     def run(self):
-        try:
-            for worker in self.workers:
-                worker.start()
+        for worker in self.workers:
+            worker.start()
 
-            logging.info("[REQUEST HANDLER] Starts")
-            while not self.stop_event.is_set():
-                client_sock = self.socket.accept()
-                if client_sock == None:
-                    continue
-                self.requests_queue.put(client_sock)
-        except SystemExit:
-            self.requests_queue.join()
-            self.stop_event.set()
+        logging.info("[REQUEST HANDLER] Starts")
+        while not self.stop_event.is_set():
+            client_sock = self.socket.accept()
+            if client_sock == None:
+                continue
+            self.requests_queue.put(client_sock)
+        self.requests_queue.join()
+        self.query_queue.join()
+        self.socket.close()
 
     def _handle_client_connection(self, client_sock):
         """

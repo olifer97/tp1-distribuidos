@@ -7,6 +7,7 @@ import json
 import logging
 import os
 from custom_socket.client_socket import ClientSocket
+from constants import *
 
 STATS_FILE = "stats.json"
 
@@ -39,13 +40,18 @@ class QueryHandler(threading.Thread):
         
 
     def _hear_stats(self):
-        while True:
-            stats_data = self.stats_queue.get()
-            logging.info("Stats update {}".format(stats_data))
+        while not self.stop_event.is_set():
+            try:
+                stats_data = self.stats_queue.get(timeout=TIMEOUT_WAITING_MESSAGE)
+                self.stats_queue.task_done()
+                logging.info("Stats update {}".format(stats_data))
 
-            self.miner_stats[stats_data["miner"]] = self.miner_stats.get(stats_data["miner"], {stats_data['status']: 0})
-            self.miner_stats[stats_data["miner"]][stats_data['status']] += 1
-            self._write_stats()
+                self.miner_stats[stats_data["miner"]] = self.miner_stats.get(stats_data["miner"], {stats_data['status']: 0})
+                self.miner_stats[stats_data["miner"]][stats_data['status']] += 1
+                self._write_stats()
+            except queue.Empty:
+                continue
+        logging.info("[HEAR STATS] Finishes")
 
     def _query_blockchain(self, query_info): # TODO agregar mas threads
 
@@ -65,10 +71,15 @@ class QueryHandler(threading.Thread):
             return self._query_blockchain(request_info)
 
     def run(self):
-        while True:
-            request = self.query_queue.get()
-            self.query_queue.task_done()
-            response = self._do_request(request["query"])
-            logging.info("Response to query: {}".format(response))
-            self.response_queue.put({"socket": request["socket"], "info": response})
- 
+        while not self.stop_event.is_set():
+            try:
+                request = self.query_queue.get(timeout=TIMEOUT_WAITING_MESSAGE)
+                self.query_queue.task_done()
+                response = self._do_request(request["query"])
+                logging.info("Response to query: {}".format(response))
+                self.response_queue.put({"socket": request["socket"], "info": response})
+            except queue.Empty:
+                continue
+        logging.info("[QUERY HANDLER] Finishes")
+        self.response_queue.join()
+        self.hearing_stats.join()

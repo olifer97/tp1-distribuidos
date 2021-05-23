@@ -16,8 +16,11 @@ stop_threads = False
 
 def send_and_recv(request, address):
     sock = ClientSocket(address = address)
-    sock.send_with_size(json.dumps(request))
-    response = sock.recv_with_size()
+    try:
+      sock.send_with_size(json.dumps(request))
+      response = sock.recv_with_size()
+    except:
+      response = "Socket close"
     sock.close()
     return response 
 

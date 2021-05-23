@@ -48,27 +48,34 @@ def parse_config_params():
 
 
 def main():
-    config = parse_config_params()
+    try:
+        config = parse_config_params()
 
-    chunks_queue = queue.Queue(maxsize=config['threshold'])
-    query_queue = queue.Queue()
-    stats_queue = queue.Queue()
-    response_queue = queue.Queue()
-    stop_event = threading.Event()
+        chunks_queue = queue.Queue(maxsize=config['threshold'])
+        query_queue = queue.Queue()
+        stats_queue = queue.Queue()
+        response_queue = queue.Queue()
+        stop_event = threading.Event()
 
-    miners_handler = MinersHandler(config['n_miners'], chunks_queue, stats_queue, (
-        config['blockchain_host'], config['writer_port']), stop_event)
-    miners_handler.start()
+        miners_handler = MinersHandler(config['n_miners'], chunks_queue, stats_queue, (
+            config['blockchain_host'], config['writer_port']), stop_event)
+        miners_handler.start()
 
-    query_handler = QueryHandler(config['n_miners'], query_queue, stats_queue, response_queue, (
-        config['blockchain_host'], config['writer_port']), (config['blockchain_host'], config['reader_port']), stop_event)
-    query_handler.start()
+        query_handler = QueryHandler(config['n_miners'], query_queue, stats_queue, response_queue, (
+            config['blockchain_host'], config['writer_port']), (config['blockchain_host'], config['reader_port']), stop_event)
+        query_handler.start()
 
-    request_handler = RequestHandler(
-        config['api_port'], config['listen_backlog'], chunks_queue, query_queue, response_queue, config['n_workers'], stop_event)
-    request_handler.run()
-    miners_handler.join()
-    query_handler.join()
+        request_handler = RequestHandler(
+            config['api_port'], config['listen_backlog'], chunks_queue, query_queue, response_queue, config['n_workers'], stop_event)
+        request_handler.start()
+
+        miners_handler.join()
+        query_handler.join()
+        request_handler.join()
+    except SystemExit:
+        logging.info("[API] Starts finishing")
+        stop_event.set()
+            
 
 
 

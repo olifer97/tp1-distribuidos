@@ -1,6 +1,7 @@
 import datetime
 import threading
 import multiprocessing as mp
+import queue
 import time
 import json
 import logging
@@ -9,8 +10,9 @@ from constants import *
 from custom_socket.client_socket import ClientSocket
 
 class Miner(mp.Process):
-    def __init__(self, queue_blocks, stop_mining_queue, outcome_queue, writer_address):
+    def __init__(self, queue_blocks, stop_mining_queue, outcome_queue, writer_address, stop):
       mp.Process.__init__(self)
+      self.stop = stop
       self.queue_blocks = queue_blocks
       self.stop_mining_queue = stop_mining_queue
       self.outcome_queue = outcome_queue
@@ -54,7 +56,13 @@ class Miner(mp.Process):
         
 
     def run(self):
-      while True:
-        block_data = self.queue_blocks.get()
-        logging.info("Got block data: {}".format(block_data))
-        self.mine(Block.deserialize(block_data))
+      logging.info("[MINER] Starts")
+      while not self.stop.is_set():
+        try:
+          block_data = self.queue_blocks.get(timeout=TIMEOUT_WAITING_MESSAGE)
+          logging.info("Got block data: {}".format(block_data))
+          self.mine(Block.deserialize(block_data))
+        except queue.Empty:
+          continue
+      logging.info("[MINER] Finishing")
+      self.outcome_queue.close()
