@@ -3,17 +3,19 @@ import threading
 import time
 import json
 import os
+import queue
+import logging
 
 from block import Block
 from constants import *
 from filelock import FileLock
 
 class Reader(threading.Thread):
-    def __init__(self, request_queue, response_queue):
+    def __init__(self, request_queue, response_queue, stop_event):
       threading.Thread.__init__(self)
       self.request_queue = request_queue
       self.response_queue = response_queue
-
+      self.stop_event = stop_event
     
     def _get_block(self, hash):
         filename = "{}.json".format(hash)
@@ -47,16 +49,23 @@ class Reader(threading.Thread):
         return response
 
     def run(self):
-      while True:
-        request = self.request_queue.get()
+      while not self.stop_event.is_set():
+        try:
+            request = self.request_queue.get(timeout=TIMEOUT_WAITING_MESSAGE)
+            self.request_queue.task_done()
 
-        if request['request']['type'] == 'gh':
-            block = self._get_block(request['request']['hash'])
-            self.response_queue.put({'socket': request['socket'] , 'response': block})
+            if request['request']['type'] == 'gh':
+                block = self._get_block(request['request']['hash'])
+                self.response_queue.put({'socket': request['socket'] , 'response': block})
 
-        if request['request']['type'] == 'gm':
-            timestamp = datetime.datetime.strptime(request['request']['timestamp'], TIMESTAMP_FORMAT)
-            blocks = self._get_blocks_in_minute(timestamp)
-            self.response_queue.put({'socket': request['socket'], 'response': blocks})
+            if request['request']['type'] == 'gm':
+                timestamp = datetime.datetime.strptime(request['request']['timestamp'], TIMESTAMP_FORMAT)
+                blocks = self._get_blocks_in_minute(timestamp)
+                self.response_queue.put({'socket': request['socket'], 'response': blocks})
+        except queue.Empty:
+            if self.stop_event.is_set():
+                self.response_queue.join()
+                logging.info("[READER] Finished")
+                break
         
         

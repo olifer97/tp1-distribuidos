@@ -6,7 +6,8 @@ from .base_socket import Socket
 class ServerSocket(Socket):
     def __init__(self, host, port, listen_backlog):
         Socket.__init__(self)
-        self.bind_listen(host, port, listen_backlog)     
+        self.socket.settimeout(0.2) # timeout for listening
+        self.bind_listen(host, port, listen_backlog)   
         
     def bind_listen(self, host, port, listen_backlog):
         self.socket.bind((host, port))
@@ -20,12 +21,13 @@ class ServerSocket(Socket):
         Function blocks until a connection to a client is made.
         Then connection created is printed and returned
         """
-
-        # Connection arrived
-        logging.info("Proceed to accept new connections")
-        c, addr = self.socket.accept()
-        logging.info('Got connection from {}'.format(addr))
-        return ClientSocket(connection = c)
+        try:
+            # Connection arrived
+            c, addr = self.socket.accept()
+            logging.info('Got connection from {}'.format(addr))
+            return ClientSocket(connection = c)
+        except socket.timeout:
+            return None
 
     def send_to(self, client_sock, data, encode=True):
         client_sock.send_with_size(data, encode)

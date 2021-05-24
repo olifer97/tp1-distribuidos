@@ -1,26 +1,14 @@
 import threading
-import json
-import os
 import sys
 import getopt
 import queue
 
 from common.constants import *
-from common.custom_socket.client_socket import ClientSocket
-
-BLOCKCHAIN_ADDRESS = ('127.0.0.1', 5000)
+from client_utils import *
 
 OPTIONS = 'client.py [--clients <number>] [--size <number>] [--requests <number>]'
 
 stop_threads = False
-
-def send_and_recv(request, address):
-    sock = ClientSocket(address = address)
-    sock.send_with_size(json.dumps(request))
-    response = sock.recv_with_size()
-    sock.close()
-    return response 
-
 
 class Client(threading.Thread):
     def __init__(self, address, request_queue):
@@ -40,19 +28,6 @@ class Client(threading.Thread):
         except queue.Empty:
           if stop_threads:
             break
-
-def parse_config_params():
-   config_params = {}
-   try:
-      config_params["host"] = os.environ["HOST"]
-   except KeyError as e:
-      config_params["host"] = BLOCKCHAIN_ADDRESS[0]
-
-   try:
-      config_params["port"] = int(os.environ["PORT"])
-   except KeyError as e:
-      config_params["port"] = BLOCKCHAIN_ADDRESS[1]
-   return config_params
 
 def main(argv):
   config = parse_config_params()

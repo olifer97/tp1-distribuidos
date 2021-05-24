@@ -9,6 +9,13 @@ import logging
 
 import sys
 import os
+import signal
+import threading
+
+def handle_exit(sig, frame):
+    raise(SystemExit)
+
+signal.signal(signal.SIGTERM, handle_exit)
 
 
 def parse_config_params():
@@ -41,24 +48,34 @@ def parse_config_params():
 
 
 def main():
-    config = parse_config_params()
+    try:
+        config = parse_config_params()
 
-    chunks_queue = queue.Queue(maxsize=config['threshold'])
-    query_queue = queue.Queue()
-    stats_queue = queue.Queue()
-    response_queue = queue.Queue()
+        chunks_queue = queue.Queue(maxsize=config['threshold'])
+        query_queue = queue.Queue()
+        stats_queue = queue.Queue()
+        response_queue = queue.Queue()
+        stop_event = threading.Event()
 
-    miners_handler = MinersHandler(config['n_miners'], chunks_queue, stats_queue, (
-        config['blockchain_host'], config['writer_port']))
-    miners_handler.start()
+        miners_handler = MinersHandler(config['n_miners'], chunks_queue, stats_queue, (
+            config['blockchain_host'], config['writer_port']), stop_event)
+        miners_handler.start()
 
-    query_handler = QueryHandler(config['n_miners'], query_queue, stats_queue, response_queue, (
-        config['blockchain_host'], config['writer_port']), (config['blockchain_host'], config['reader_port']))
-    query_handler.start()
+        query_handler = QueryHandler(config['n_miners'], query_queue, stats_queue, response_queue, (
+            config['blockchain_host'], config['writer_port']), (config['blockchain_host'], config['reader_port']), stop_event)
+        query_handler.start()
 
-    request_handler = RequestHandler(
-        config['api_port'], config['listen_backlog'], chunks_queue, query_queue, response_queue, config['n_workers'])
-    request_handler.run()
+        request_handler = RequestHandler(
+            config['api_port'], config['listen_backlog'], chunks_queue, query_queue, response_queue, config['n_workers'], stop_event)
+        request_handler.start()
+
+        miners_handler.join()
+        query_handler.join()
+        request_handler.join()
+    except SystemExit:
+        stop_event.set()
+            
+
 
 
 if __name__ == "__main__":
