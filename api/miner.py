@@ -22,12 +22,16 @@ class Miner(mp.Process):
       return block.hash() < (2**256) / block.difficulty()
 
     def _send_to_blockchain(self, block, block_hash):
-      self.sock = ClientSocket(address = self.writer_address)
-      self.sock.send_with_size(block)
+      try:
+        self.sock = ClientSocket(address = self.writer_address)
+        self.sock.send_with_size(block)
 
-      blockchain_response = ACK_SCHEME.unpack(self.sock.recv_with_size(decode=False))[0]
+        blockchain_response = ACK_SCHEME.unpack(self.sock.recv_with_size(decode=False))[0]
 
-      return {"success": blockchain_response, "hash": block_hash}
+        return {"success": blockchain_response, "hash": block_hash}
+      except:
+        logging.info("[MINER] Failed by socket connection")
+        return {"success": False}
 
     def mine(self, block):
       timestamp = datetime.datetime.now()
