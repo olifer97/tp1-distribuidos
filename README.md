@@ -26,6 +26,6 @@ Para pruebas de mas carga hay otro script `multiple_clients.py`:
 
 - `python3 mutiple_clients.py --clients <number> --requests <number> --size <number>`
 
-Para ambos scripts se le puede definir el puesto y la ip a la cual deben pegarle con las 
+Para ambos scripts se le puede definir el puerto y la ip a la cual deben pegarle con las 
 variables de entorno **PORT** y **HOST**
 
