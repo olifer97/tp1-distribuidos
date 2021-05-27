@@ -15,6 +15,7 @@ class Client(threading.Thread):
       threading.Thread.__init__(self)
       self.address = address
       self.request_queue = request_queue
+      self.failed_requests = 0
 
     def run(self):
       global stop_threads
@@ -22,12 +23,19 @@ class Client(threading.Thread):
         try:
           request = self.request_queue.get()
           self.request_queue.task_done()
-          print(send_and_recv(request, self.address))
+          response = send_and_recv(request, self.address)
+          print(response)
+          if response['response'] == 'System overload try sending chunk later':
+            self.failed_requests +=1
           if stop_threads:
             break
         except queue.Empty:
           if stop_threads:
-            break
+            break 
+
+    def join(self):
+        threading.Thread.join(self)
+        return self.failed_requests
 
 def main(argv):
   config = parse_config_params()
@@ -59,10 +67,13 @@ def main(argv):
 
   requests_queue.join()
 
+  failed_responses = 0
   global stop_threads
   stop_threads = True
   for client in clients_threads:
-      client.join()
+      failed_responses += client.join()
+
+  print("Amount of failed requests: {}".format(failed_responses))
   print("Finished")
   sys.exit()
 
